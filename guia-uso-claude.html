@@ -1,0 +1,433 @@
+<title>Rinde Claude</title>
+<meta name="description" content="Guía para que tu límite de Claude dure semanas y no un día.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F3F4F1; --surface:#FFFFFF; --ink:#1B211D; --muted:#5B655E; --line:#D9DDD6;
+  --accent:#C2410C; --accent-soft:#FBE7DC; --good:#2F7A4B; --good-soft:#DDF0E3;
+  --bad:#B42318; --bad-soft:#FBE3E0; --code:#EBEDE7;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141815; --surface:#1C211E; --ink:#E9ECE6; --muted:#9BA59E; --line:#2E3530;
+    --accent:#F08A4B; --accent-soft:#3A2519; --good:#6BC98E; --good-soft:#1B3325;
+    --bad:#F28B7E; --bad-soft:#3A1E1B; --code:#252B27; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141815; --surface:#1C211E; --ink:#E9ECE6; --muted:#9BA59E; --line:#2E3530;
+  --accent:#F08A4B; --accent-soft:#3A2519; --good:#6BC98E; --good-soft:#1B3325;
+  --bad:#F28B7E; --bad-soft:#3A1E1B; --code:#252B27; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--body);padding-inline:16px}
+.wrap{max-width:860px;margin:0 auto;padding-block:40px 80px;display:flex;flex-direction:column;gap:56px}
+h1,h2,h3{font-family:var(--display);line-height:1.1;text-wrap:balance;margin:0}
+h1{font-size:clamp(2.4rem,7vw,4rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:clamp(1.6rem,4vw,2.1rem);font-weight:700;letter-spacing:-.01em}
+h3{font-size:1.15rem;font-weight:700}
+p{margin:0;max-width:65ch}
+a{color:var(--accent)}
+code,kbd{font-family:var(--mono);font-size:.88em;background:var(--code);padding:.1em .4em;border-radius:4px}
+.eyebrow{font:500 .78rem/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+section{display:flex;flex-direction:column;gap:18px}
+.lead{font-size:1.15rem;color:var(--muted)}
+header{display:flex;flex-direction:column;gap:18px}
+nav{display:flex;flex-wrap:wrap;gap:8px}
+nav a{font:500 .85rem var(--mono);text-decoration:none;color:var(--ink);border:1px solid var(--line);padding:6px 10px;border-radius:999px;background:var(--surface)}
+nav a:hover,nav a:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+
+.rule{background:var(--accent-soft);border-left:4px solid var(--accent);padding:20px 22px;border-radius:0 8px 8px 0;display:flex;flex-direction:column;gap:10px}
+.rule strong{font-family:var(--display);font-size:1.3rem;line-height:1.25}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:8px}
+.card p{font-size:.95rem;color:var(--muted)}
+.tag{align-self:flex-start;font:500 .72rem var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:4px}
+.tag.hi{background:var(--bad-soft);color:var(--bad)}
+.tag.mid{background:var(--accent-soft);color:var(--accent)}
+.tag.lo{background:var(--good-soft);color:var(--good)}
+
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.95rem}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:500 .75rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600;white-space:nowrap}
+
+/* calculadora */
+.calc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:18px}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.controls label{display:flex;flex-direction:column;gap:6px;font-size:.9rem;color:var(--muted)}
+.controls output{font-family:var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.bars{display:flex;flex-direction:column;gap:14px}
+.bar-row{display:flex;flex-direction:column;gap:6px}
+.bar-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:.92rem}
+.bar-head span:last-child{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.track{height:18px;background:var(--code);border-radius:4px;overflow:hidden}
+.fill{height:100%;background:var(--bad);transition:width .3s ease}
+.fill.good{background:var(--good)}
+.saving{font-family:var(--display);font-size:1.4rem;font-weight:700}
+.saving em{font-style:normal;color:var(--good)}
+.note{font-size:.85rem;color:var(--muted)}
+
+.dodont{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.col{border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:10px}
+.col.no{background:var(--bad-soft)}
+.col.yes{background:var(--good-soft)}
+.col h3{font-size:1rem}
+.col.no h3{color:var(--bad)} .col.yes h3{color:var(--good)}
+.col ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:.95rem}
+
+.prompts{display:flex;flex-direction:column;gap:12px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:600px){.pair{grid-template-columns:1fr}}
+.pair div{font-family:var(--mono);font-size:.85rem;padding:12px 14px;border-radius:8px;background:var(--surface);border:1px solid var(--line)}
+.pair div::before{display:block;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+.pair .b::before{content:"Gasta más";color:var(--bad)}
+.pair .g::before{content:"Gasta menos";color:var(--good)}
+
+.cmds{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+.cmd{display:flex;flex-direction:column;gap:4px;padding:14px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.cmd code{align-self:flex-start;font-size:.95rem;background:none;padding:0;color:var(--accent);font-weight:500}
+.cmd span{font-size:.9rem;color:var(--muted)}
+
+.checklist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.checklist label{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer}
+.checklist input{margin-top:5px;accent-color:var(--good);width:18px;height:18px;flex:none}
+.checklist input:checked + span{color:var(--muted);text-decoration:line-through}
+.progress{font-family:var(--mono);font-size:.9rem;color:var(--muted)}
+
+.small{font-size:.85rem;color:var(--muted)}
+footer{border-top:1px solid var(--line);padding-top:20px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.fill{transition:none}}
+</style>
+
+<div class="wrap">
+
+<header>
+  <span class="eyebrow">Guía práctica · límites de uso</span>
+  <h1>Haz que Claude te dure semanas</h1>
+  <p class="lead">Si te fundes el límite en un día no es mala suerte. Casi siempre son tres o cuatro hábitos concretos. Aquí tienes cómo funciona el consumo por dentro y qué cambiar.</p>
+  <nav aria-label="Secciones">
+    <a href="#regla">La regla de oro</a>
+    <a href="#limites">Cómo se mide</a>
+    <a href="#gasto">Qué gasta</a>
+    <a href="#calc">Calculadora</a>
+    <a href="#modelo">Modelo y esfuerzo</a>
+    <a href="#web">claude.ai</a>
+    <a href="#code">Claude Code</a>
+    <a href="#prompts">Prompts</a>
+    <a href="#check">Checklist</a>
+  </nav>
+</header>
+
+<section id="regla">
+  <span class="eyebrow">Lo más importante</span>
+  <h2>La regla de oro</h2>
+  <div class="rule">
+    <strong>Claude no tiene memoria entre mensajes. Cada vez que escribes, se vuelve a leer la conversación entera desde el principio.</strong>
+    <p>El mensaje 40 de un chat no cuesta lo que ocupa tu frase: cuesta tu frase más los 39 mensajes anteriores, más cada archivo, imagen o resultado de búsqueda que haya en el chat. Por eso los chats largos se comen el límite a una velocidad que no se nota hasta que se acaba.</p>
+  </div>
+  <p>Todo lo demás en esta guía sale de aquí. Menos contexto por mensaje, menos mensajes, y un modelo y un esfuerzo acordes a la tarea.</p>
+</section>
+
+<section id="limites">
+  <span class="eyebrow">Cómo funciona</span>
+  <h2>Cómo se mide tu uso</h2>
+  <p>En los planes de suscripción (Pro, Max…) no pagas por mensaje. Tienes un presupuesto de uso que se mide en <strong>tokens</strong>, trocitos de texto de unas pocas letras. En español, una palabra ronda 1,5 tokens de media.</p>
+  <div class="grid">
+    <div class="card">
+      <span class="tag mid">Ventana corta</span>
+      <h3>Límite de sesión</h3>
+      <p>Se cuenta en ventanas de unas 5 horas que empiezan con tu primer mensaje. Si lo agotas, esperas a que la ventana se reinicie.</p>
+    </div>
+    <div class="card">
+      <span class="tag hi">Ventana larga</span>
+      <h3>Límite semanal</h3>
+      <p>Además hay un tope por semana. Es el que te deja tirado varios días si quemas mucho seguido.</p>
+    </div>
+    <div class="card">
+      <span class="tag lo">Compartido</span>
+      <h3>Una sola bolsa</h3>
+      <p>La web, la app del móvil, la de escritorio y Claude Code tiran del mismo presupuesto. Lo que gastas programando no lo tienes para chatear.</p>
+    </div>
+  </div>
+  <p class="small">Las cifras exactas dependen del plan y Anthropic las ajusta con el tiempo, así que no te fíes de números que veas en vídeos. Tu consumo real lo ves en la configuración de tu cuenta, en el apartado de uso, y en Claude Code con <code>/usage</code>.</p>
+</section>
+
+<section id="gasto">
+  <span class="eyebrow">Dónde se va</span>
+  <h2>Qué gasta tokens de verdad</h2>
+  <div class="tablebox">
+    <table>
+      <thead><tr><th>Qué</th><th>Por qué gasta</th><th>Impacto</th></tr></thead>
+      <tbody>
+        <tr><td>Historial del chat</td><td>Se relee entero en cada mensaje. Crece con cada ida y vuelta.</td><td><span class="tag hi">Muy alto</span></td></tr>
+        <tr><td>Archivos y PDFs</td><td>Un PDF de 50 páginas se relee en cada mensaje mientras siga en el chat.</td><td><span class="tag hi">Muy alto</span></td></tr>
+        <tr><td>Modelo grande</td><td>Opus gasta el límite bastante más rápido que Sonnet, y Sonnet más que Haiku, por el mismo texto.</td><td><span class="tag hi">Alto</span></td></tr>
+        <tr><td>Pensamiento / esfuerzo</td><td>El razonamiento interno son tokens de salida, que son los más caros. Esfuerzo alto = mucho razonamiento.</td><td><span class="tag hi">Alto</span></td></tr>
+        <tr><td>Búsqueda web e investigación</td><td>Cada página leída entra en el contexto. El modo investigación lee decenas.</td><td><span class="tag hi">Alto</span></td></tr>
+        <tr><td>Herramientas y conectores</td><td>Cada conector o servidor MCP activo añade sus instrucciones al contexto de cada mensaje, lo uses o no.</td><td><span class="tag mid">Medio</span></td></tr>
+        <tr><td>Imágenes</td><td>Una captura grande equivale a bastante texto y también se relee.</td><td><span class="tag mid">Medio</span></td></tr>
+        <tr><td>Respuestas largas</td><td>Pedir “explícamelo todo” genera mucha salida que además engorda el historial.</td><td><span class="tag mid">Medio</span></td></tr>
+        <tr><td>Tu pregunta</td><td>Casi nunca es el problema. Una frase son unas decenas de tokens.</td><td><span class="tag lo">Bajo</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>La caché ayuda, pero caduca.</strong> Si sigues trabajando en el mismo chat sin pausas largas, la parte repetida del contexto se reutiliza más barata. Si vuelves a un chat enorme horas después, se procesa todo otra vez a precio completo. Volver a un chat viejo y gigante para preguntar una tontería es de lo peor que puedes hacer.</p>
+</section>
+
+<section id="calc">
+  <span class="eyebrow">Hazte una idea</span>
+  <h2>Calculadora: un chat largo contra varios cortos</h2>
+  <p>Mueve los valores. La barra roja es lo que lee Claude en total si lo haces todo en un solo chat; la verde, si empiezas un chat nuevo cada pocos mensajes arrastrando solo un resumen.</p>
+  <div class="calc">
+    <div class="controls">
+      <label for="c-msgs">Mensajes en total <output id="o-msgs">60</output>
+        <input type="range" id="c-msgs" min="10" max="200" step="5" value="60"></label>
+      <label for="c-per">Tokens que añade cada ida y vuelta <output id="o-per">1.500</output>
+        <input type="range" id="c-per" min="200" max="6000" step="100" value="1500"></label>
+      <label for="c-base">Contexto fijo (archivos, instrucciones) <output id="o-base">5.000</output>
+        <input type="range" id="c-base" min="0" max="50000" step="1000" value="5000"></label>
+      <label for="c-split">Chat nuevo cada… <output id="o-split">10 mensajes</output>
+        <input type="range" id="c-split" min="3" max="40" step="1" value="10"></label>
+    </div>
+    <div class="bars">
+      <div class="bar-row">
+        <div class="bar-head"><span>Un solo chat</span><span id="t-long">0</span></div>
+        <div class="track"><div class="fill" id="b-long"></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-head"><span>Chats cortos + resumen</span><span id="t-short">0</span></div>
+        <div class="track"><div class="fill good" id="b-short"></div></div>
+      </div>
+    </div>
+    <p class="saving">Con chats cortos lees <em id="t-ratio">×</em> menos.</p>
+    <p class="note">Es una estimación simplificada para ver la forma del crecimiento, no tu consumo real. Supone que cada chat nuevo arranca con el contexto fijo más un resumen de 500 tokens.</p>
+  </div>
+</section>
+
+<section id="modelo">
+  <span class="eyebrow">Palancas grandes</span>
+  <h2>Modelo y nivel de esfuerzo</h2>
+  <p>Son los dos mandos que más cambian el consumo. La gente a la que le dura semanas no usa siempre el modelo más potente con el esfuerzo al máximo.</p>
+  <div class="tablebox">
+    <table>
+      <thead><tr><th>Modelo</th><th>Úsalo para</th><th>Consumo</th></tr></thead>
+      <tbody>
+        <tr><td>Haiku</td><td>Preguntas rápidas, traducir, resumir, formatear, dudas sueltas.</td><td><span class="tag lo">Bajo</span></td></tr>
+        <tr><td>Sonnet</td><td>El día a día: programar, escribir, analizar. Debería ser tu modelo por defecto.</td><td><span class="tag mid">Medio</span></td></tr>
+        <tr><td>Opus</td><td>Problemas difíciles de verdad: arquitectura, bugs que no salen, razonamiento largo.</td><td><span class="tag hi">Alto</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <span class="tag lo">Esfuerzo bajo</span>
+      <h3>Responde casi directo</h3>
+      <p>Para cosas mecánicas: renombrar, cambiar un color, una pregunta concreta, un comando que no recuerdas.</p>
+    </div>
+    <div class="card">
+      <span class="tag mid">Esfuerzo medio</span>
+      <h3>Lo normal</h3>
+      <p>Para la mayoría de tareas de programación o escritura con algo de lógica.</p>
+    </div>
+    <div class="card">
+      <span class="tag hi">Esfuerzo alto / pensamiento extendido</span>
+      <h3>Solo cuando hace falta</h3>
+      <p>Piensa mucho antes de responder y esos tokens cuentan. Actívalo para lo complicado y apágalo después.</p>
+    </div>
+  </div>
+  <p>Truco: empieza con Sonnet y esfuerzo normal. Si ves que no da con ello, entonces sube. Hacerlo al revés, con Opus al máximo para preguntar cómo se centra un div, es tirar el límite.</p>
+</section>
+
+<section id="web">
+  <span class="eyebrow">Web y app</span>
+  <h2>En claude.ai y en el móvil</h2>
+  <div class="dodont">
+    <div class="col no">
+      <h3>Lo que te quema el límite</h3>
+      <ul>
+        <li>Un único chat eterno para todo el proyecto.</li>
+        <li>Mandar “no, así no” y seguir corrigiendo en cadena.</li>
+        <li>Subir el PDF entero cuando solo necesitas dos páginas.</li>
+        <li>Búsqueda web, investigación y pensamiento extendido siempre activados.</li>
+        <li>Tener conectados conectores que no usas.</li>
+        <li>Diez mensajes seguidos con una pregunta cada uno.</li>
+        <li>Pedir que reescriba el documento entero para cambiar una frase.</li>
+      </ul>
+    </div>
+    <div class="col yes">
+      <h3>Lo que hace que dure</h3>
+      <ul>
+        <li>Un chat por tema. Cuando cambias de tema, chat nuevo.</li>
+        <li><strong>Editar tu mensaje</strong> en vez de corregir después: la respuesta mala desaparece del contexto.</li>
+        <li>Pegar solo el fragmento relevante del documento o el código.</li>
+        <li>Activar búsqueda o investigación solo en el mensaje que lo necesita.</li>
+        <li>Juntar varias preguntas en un solo mensaje.</li>
+        <li>Pedir solo la parte que cambia: “dame solo el párrafo nuevo”.</li>
+        <li>Usar <strong>Proyectos</strong> para documentos que consultas a menudo en vez de subirlos a cada chat.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Cómo cambiar de chat sin perder el hilo</h3>
+    <p>Cuando un chat se haga largo, pídele: <code>Resúmeme en 10 puntos lo que hemos decidido y lo que falta, para continuar en un chat nuevo.</code> Copia el resumen, abre un chat nuevo y pégalo. Pasas de arrastrar decenas de miles de tokens a unos pocos cientos.</p>
+  </div>
+</section>
+
+<section id="code">
+  <span class="eyebrow">Programando</span>
+  <h2>En Claude Code</h2>
+  <p>Aquí es donde más rápido se va el límite, porque Claude lee archivos, ejecuta comandos y todo lo que ve entra en el contexto. Un <code>npm test</code> que escupe 3.000 líneas se queda en la conversación hasta que la limpies.</p>
+  <div class="cmds">
+    <div class="cmd"><code>/clear</code><span>Borra la conversación. Úsalo al terminar cada tarea. Es el comando que más límite ahorra.</span></div>
+    <div class="cmd"><code>/compact</code><span>Resume la conversación y sigue con el resumen. Para tareas largas que no quieres cortar.</span></div>
+    <div class="cmd"><code>/context</code><span>Te enseña qué está ocupando el contexto: archivos, herramientas, CLAUDE.md…</span></div>
+    <div class="cmd"><code>/model</code><span>Cambia de modelo. Sonnet para el día a día, Opus para lo gordo.</span></div>
+    <div class="cmd"><code>/usage</code><span>Cuánto te queda del límite de sesión y del semanal.</span></div>
+    <div class="cmd"><code>/mcp</code><span>Revisa los servidores MCP conectados y quita los que no uses: cargan contexto en cada mensaje.</span></div>
+  </div>
+  <p class="small">Los comandos disponibles cambian entre versiones. Escribe <code>/</code> en Claude Code para ver la lista de la tuya.</p>
+  <div class="dodont">
+    <div class="col no">
+      <h3>Evita</h3>
+      <ul>
+        <li>“Revisa todo el proyecto y mejóralo”. Leerá medio repositorio.</li>
+        <li>Un CLAUDE.md de 500 líneas. Se carga en cada sesión.</li>
+        <li>Pedir subagentes o tareas en paralelo por costumbre: cada uno empieza de cero y relee lo que necesita.</li>
+        <li>Dejar que ejecute tests o builds con salidas enormes una y otra vez.</li>
+        <li>Seguir en la misma sesión después de cambiar de tarea.</li>
+      </ul>
+    </div>
+    <div class="col yes">
+      <h3>Haz</h3>
+      <ul>
+        <li>Dale la ruta exacta: “en <code>src/api/users.ts</code>, la función <code>login</code>”.</li>
+        <li>CLAUDE.md corto: comandos del proyecto, convenciones y poco más.</li>
+        <li>Para cambios grandes, pide primero un plan breve y apruébalo antes de que toque código.</li>
+        <li>Pide que filtre la salida: “ejecuta solo el test de login”.</li>
+        <li><code>/clear</code> entre tareas y pega un resumen de dos líneas si hace falta.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="prompts">
+  <span class="eyebrow">Cómo pedir las cosas</span>
+  <h2>Prompts que ahorran</h2>
+  <p>Un buen prompt ahorra límite porque evita las idas y vueltas. Tres mensajes de aclaración en un chat largo cuestan más que escribir bien el primero.</p>
+  <div class="prompts">
+    <div class="pair">
+      <div class="b">hazme una web</div>
+      <div class="g">Landing de una página para una peluquería en Valencia: cabecera, 3 servicios con precio, horario y mapa. HTML y CSS en un archivo, sin librerías.</div>
+    </div>
+    <div class="pair">
+      <div class="b">no funciona, arréglalo</div>
+      <div class="g">Al pulsar “Enviar” sale este error en consola: [error]. Pasa en form.js línea 40. Dime la causa y el cambio mínimo.</div>
+    </div>
+    <div class="pair">
+      <div class="b">explícame todo sobre este código</div>
+      <div class="g">¿Qué hace la función calcularTotal? Máximo 5 líneas.</div>
+    </div>
+    <div class="pair">
+      <div class="b">cambia el título y reescribe el documento</div>
+      <div class="g">Cambia el título a “Informe Q3”. Devuélveme solo la línea cambiada.</div>
+    </div>
+  </div>
+  <p>Frases útiles para añadir al final: <code>sé breve</code>, <code>solo el código</code>, <code>solo lo que cambia</code>, <code>sin explicación</code>, <code>si te falta información, pregúntame antes de empezar</code>.</p>
+</section>
+
+<section id="check">
+  <span class="eyebrow">Para tenerlo a mano</span>
+  <h2>Checklist antes de escribir</h2>
+  <p class="progress" id="progress" aria-live="polite"></p>
+  <ul class="checklist" id="checklist">
+    <li><label><input type="checkbox" id="k1"><span>¿Es un tema nuevo? Entonces chat nuevo o <code>/clear</code>.</span></label></li>
+    <li><label><input type="checkbox" id="k2"><span>¿El modelo es el adecuado? Sonnet salvo que sea difícil de verdad.</span></label></li>
+    <li><label><input type="checkbox" id="k3"><span>¿Esfuerzo alto o pensamiento extendido encendido sin necesidad?</span></label></li>
+    <li><label><input type="checkbox" id="k4"><span>¿Búsqueda web o investigación activadas sin necesidad?</span></label></li>
+    <li><label><input type="checkbox" id="k5"><span>¿Estoy pegando solo lo necesario y no el archivo entero?</span></label></li>
+    <li><label><input type="checkbox" id="k6"><span>¿He juntado todas mis preguntas en un mensaje?</span></label></li>
+    <li><label><input type="checkbox" id="k7"><span>¿He dicho qué formato y qué longitud quiero?</span></label></li>
+    <li><label><input type="checkbox" id="k8"><span>Si la respuesta ha salido mal, ¿edito mi mensaje en vez de corregir encima?</span></label></li>
+  </ul>
+</section>
+
+<section>
+  <span class="eyebrow">Resumen</span>
+  <h2>Por qué a otros les dura semanas</h2>
+  <div class="grid">
+    <div class="card"><h3>Chats cortos</h3><p>Uno por tema. Cuando se alarga, resumen y chat nuevo.</p></div>
+    <div class="card"><h3>Modelo acorde</h3><p>Sonnet de base, Haiku para lo trivial, Opus para lo difícil.</p></div>
+    <div class="card"><h3>Extras apagados</h3><p>Pensamiento, búsqueda e investigación solo cuando se necesitan.</p></div>
+    <div class="card"><h3>Contexto mínimo</h3><p>Fragmentos en vez de archivos enteros, rutas exactas, pocas herramientas conectadas.</p></div>
+  </div>
+</section>
+
+<footer>
+  <p class="small">Los límites, nombres de planes y comandos cambian con el tiempo. Si algo no coincide con lo que ves, manda lo que diga tu página de uso y la ayuda oficial de Anthropic.</p>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  var fmt = function(n){ return Math.round(n).toLocaleString('es-ES'); };
+  var $ = function(id){ return document.getElementById(id); };
+  var SUMMARY = 500;
+
+  function totalFor(n, per, base){
+    // mensaje i lee: base + per*(i-1) de historial + su propio texto
+    return n*base + per*n*(n+1)/2;
+  }
+  function calc(){
+    var n = +$('c-msgs').value, per = +$('c-per').value, base = +$('c-base').value, k = +$('c-split').value;
+    $('o-msgs').textContent = n;
+    $('o-per').textContent = fmt(per);
+    $('o-base').textContent = fmt(base);
+    $('o-split').textContent = k + ' mensajes';
+    var longT = totalFor(n, per, base);
+    var shortT = 0, left = n, first = true;
+    while(left > 0){
+      var m = Math.min(k, left);
+      shortT += totalFor(m, per, base + (first ? 0 : SUMMARY));
+      left -= m; first = false;
+    }
+    $('t-long').textContent = fmt(longT) + ' tokens';
+    $('t-short').textContent = fmt(shortT) + ' tokens';
+    $('b-long').style.width = '100%';
+    $('b-short').style.width = Math.max(1, shortT/longT*100) + '%';
+    $('t-ratio').textContent = (longT/shortT).toLocaleString('es-ES',{maximumFractionDigits:1}) + ' veces';
+  }
+  ['c-msgs','c-per','c-base','c-split'].forEach(function(id){ $(id).addEventListener('input', calc); });
+  calc();
+
+  var boxes = document.querySelectorAll('#checklist input');
+  var KEY = 'rinde-claude-check';
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e){}
+  function progress(){
+    var done = 0; boxes.forEach(function(b){ if(b.checked) done++; });
+    $('progress').textContent = done + ' de ' + boxes.length + ' revisados';
+  }
+  boxes.forEach(function(b){
+    if(saved[b.id]) b.checked = true;
+    b.addEventListener('change', function(){
+      saved[b.id] = b.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch(e){}
+      progress();
+    });
+  });
+  progress();
+})();
+</script>
