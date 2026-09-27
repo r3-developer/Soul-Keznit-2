@@ -482,7 +482,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
         <h3>La solución</h3>
         <p><b>Una conversación para cada tarea.</b> "Añadir el doble salto" es una conversación. "Hacer el menú" es otra.</p>
         <p>Si empiezas de cero, el primer mensaje de la conversación nueva cuesta como el <b>mensaje 1</b>, no como el 40.</p>
-        <p>Para que Claude no pierda el hilo entre conversaciones, deja por escrito el estado del juego en <span class="inline">PROGRESO.md</span>. Lo explicamos en el <a href="#primer-juego">paso 4</a>.</p>
+        <p>Para que Claude no pierda el hilo entre conversaciones, deja por escrito el estado del juego en <span class="inline">PROGRESO.md</span>. Abajo te explicamos <a href="#guardar">cómo hacer que lo haga solo</a>.</p>
         <p>En la terminal: <kbd>/clear</kbd> empieza de cero y <kbd>/compact</kbd> resume la conversación. Tu gasto está en <b>claude.ai → Ajustes → Uso</b>, o con <kbd>/usage</kbd>.</p>
       </div>
     </div>
@@ -533,6 +533,79 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
         <p>Cambiar la gravedad de <span class="inline">0.7</span> a <span class="inline">0.9</span> lo puedes hacer tú en el archivo. Es gratis y aprendes.</p>
       </article>
     </div>
+  </div>
+</section>
+
+<!-- ============ GUARDAR SOLO ============ -->
+<section class="alt" id="guardar" data-cat="creditos">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Guardar el progreso sin pensarlo</p>
+      <h2 class="h2">Que Claude apunte solo<br>por dónde vas.</h2>
+      <p class="lead">Si Claude deja escrito en <span class="inline">PROGRESO.md</span> qué está hecho y qué falta, cada conversación nueva empieza leyendo ese archivo corto <strong>en vez de revisar todo tu juego</strong>. Y como lo hace solo, tú no gastas mensajes en recordárselo.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <span class="n">1</span>
+        <div class="body">
+          <div>
+            <h3>Dale la orden una sola vez</h3>
+            <p>Pega este mensaje en tu proyecto <b>solo la primera vez</b>. Lo guarda en <span class="inline">CLAUDE.md</span>, que Claude lee al empezar cada conversación. A partir de ahí, lo cumple sin que se lo pidas.</p>
+          </div>
+          <div class="code">
+            <div class="code-bar"><span>mensaje para Claude (solo una vez)</span><button class="copy" type="button" data-copy="p-auto">Copiar</button></div>
+            <pre class="wrapit" id="p-auto">Añade esto a CLAUDE.md (si no existe, créalo corto):
+
+## Guardar el progreso
+- Al terminar cada tarea, actualiza PROGRESO.md sin que te lo pida: qué está hecho, qué falta y qué falla. Máximo 20 líneas; borra lo viejo.
+- Después haz commit y push.
+- Al empezar, lee PROGRESO.md y no revises todo el proyecto si no hace falta.
+
+Crea también PROGRESO.md con el estado actual del juego.</pre>
+          </div>
+        </div>
+      </li>
+
+      <li class="step">
+        <span class="n">2</span>
+        <div class="body">
+          <div>
+            <h3>Así queda PROGRESO.md</h3>
+            <p>Corto y al día. Si crece mucho, Claude lo lee entero cada vez y gasta más: por eso la regla dice <b>máximo 20 líneas</b>.</p>
+          </div>
+          <div class="code">
+            <div class="code-bar"><span>PROGRESO.md</span></div>
+            <pre class="wrapit">## Hecho
+- El jugador se mueve y salta.
+- Pinchos y reinicio al morir.
+
+## Siguiente
+- Doble salto.
+- Pantalla de inicio.
+
+## Falla
+- A veces atraviesa el suelo si cae muy rápido.</pre>
+          </div>
+        </div>
+      </li>
+
+      <li class="step">
+        <span class="n">3</span>
+        <div class="body">
+          <div>
+            <h3>Cada tarea, una conversación nueva</h3>
+            <p>Cuando acabes una cosa, abre una conversación nueva (o escribe <kbd>/clear</kbd>). Empieza barata, porque no arrastra la anterior, y aun así Claude sabe por dónde vas.</p>
+          </div>
+          <div class="code">
+            <div class="code-bar"><span>primer mensaje de cada conversación</span><button class="copy" type="button" data-copy="p-next">Copiar</button></div>
+            <pre class="wrapit" id="p-next">Lee PROGRESO.md y haz: [lo siguiente de la lista]. Sin explicaciones.</pre>
+          </div>
+        </div>
+      </li>
+    </ol>
+
+    <p class="lead" style="margin-top:32px">Si alguna vez se le olvida guardar, díselo tú con el mensaje del <a href="#primer-juego">paso 4</a>. Y no cierres nunca sin que haya hecho <b>push</b>, o perderás el trabajo.</p>
   </div>
 </section>
 
@@ -616,7 +689,7 @@ No me expliques el código.</pre>
         <div class="body">
           <div>
             <h3>Guarda antes de cerrar</h3>
-            <p>Al terminar cada sesión, pide que apunte en qué punto está el juego y que lo suba. <b>Si la sesión se cierra sin push, pierdes el trabajo.</b> La siguiente conversación empieza leyendo <span class="inline">PROGRESO.md</span> y no tiene que investigar nada.</p>
+            <p>Al terminar cada sesión, pide que apunte en qué punto está el juego y que lo suba. <b>Si la sesión se cierra sin push, pierdes el trabajo.</b> La siguiente conversación empieza leyendo <span class="inline">PROGRESO.md</span> y no tiene que investigar nada. <a href="#guardar">Haz que lo haga solo</a>.</p>
           </div>
           <div class="code">
             <div class="code-bar"><span>mensaje para Claude</span><button class="copy" type="button" data-copy="p-save">Copiar</button></div>

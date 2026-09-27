@@ -39,6 +39,9 @@ escribe `/usage`.
    y así no tiene que investigar el proyecto cada vez.
 7. **Ten un archivo `PROGRESO.md`** con lo que está hecho y lo que falta.
    Al final de cada sesión escribe: *"Actualiza PROGRESO.md y haz commit y push"*.
+   **Para que lo haga solo**, pide una vez que añada esto a `CLAUDE.md`:
+   *"Al terminar cada tarea, actualiza PROGRESO.md sin que te lo pida (máximo 20 líneas), y haz commit y push.
+   Al empezar, lee PROGRESO.md y no revises todo el proyecto si no hace falta."*
 8. **Cuando algo falle, copia el error exacto** (el texto rojo) y explica qué esperabas y qué pasó.
    Si solo pones "no funciona", Claude tiene que ponerse a adivinar, y eso gasta créditos.
 9. **Usa el modelo adecuado.** Para cambios simples (colores, textos, números) usa un modelo más barato
