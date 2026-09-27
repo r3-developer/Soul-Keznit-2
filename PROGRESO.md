@@ -1,21 +1,20 @@
 # Progreso
 
 ## Hecho
-- Soul Keznit 2 (Scratch) terminado: ES/EN, 24 niveles en 5 zonas, 5 jefes, 15 logros, 19 fragmentos.
-- Los .sb3 de SK1 (Remastered) y SK2 están en scratch/.
-- Web de desarrollador R3K1 (carpeta web/): https://r3k1.pages.dev
-  - Inicio estilo Apple, animado, claro/oscuro: R3K1 / TheKittyBoyfriend, saga Soul Keznit, juegos, sobre mí.
-  - /soul-keznit/ y /soul-keznit-2/: se juegan en la página (TurboWarp Packager en web/play/) + historia, zonas, jefes, final con spoiler, logros y créditos.
-  - /soul-keznit-3/: avance "En desarrollo".
-  - Publicar: `npx wrangler pages deploy web --project-name r3k1 --branch main`
-  - Regenerar web/play/: empaquetar los .sb3 con @turbowarp/packager (target zip, nube en "local") y descomprimir.
-- Cloudflare: borradas repasarexamen, taller-de-juegos e historias-de-juegos. Quedan ainhoa-gym y ana-garcia-hairdresser.
-- Música: "She Knows" es el remix 8 bit de 8 Bit Universe (original de J. Cole).
+- Web R3K1 (carpeta web/): https://r3k1.pages.dev · publicar: `npx wrangler pages deploy web --project-name r3k1 --branch main`
+  - Inicio estilo Apple, páginas de SK1 (remake + original), SK2 (juego + historia) y avance de SK3.
+- Soul Keznit REMAKE (web/play/sk1-remake/): juego propio en canvas, sin Scratch.
+  - js/engine.js (física y mecánicas), js/levels.js (mapas + historia ES/EN), js/audio.js (efectos + chiptune), js/game.js (dibujo, menús, escenas).
+  - 13 niveles en 3 actos + jefe La Trituradora (persecución, molino con 3 frenos, huida con lava). Historia: llegada al abismo, el soldado que será el Carcelero, la Voz del abismo, final que enlaza con SK2.
+  - 13 fragmentos de memoria, selección de niveles, récords, opciones (volumen, música original, sacudida, efecto retro, idioma), mando y táctil.
+  - Probar un nivel directo: /play/sk1-remake/?nivel=2-3
+  - tools/solver.js comprueba que cada nivel se puede superar con la física real (`node tools/solver.js --frag`; probe.js prueba tramos).
+- SK2 terminado en Scratch; los .sb3 de SK1 y SK2 están en scratch/.
 
 ## Falta
-- Empezar Soul Keznit 3 (web) y ponerlo en /soul-keznit-3/.
-- Añadir más juegos a la web cuando los haya (p. ej. "Kitty y la Ciudad Rosa").
+- Que R3K1 juegue el remake entero y ajuste dificultad (sobre todo 2-3, 3-2, 3-4 y el jefe).
+- Empezar Soul Keznit 3.
 
 ## Falla
-- La carpeta historias/ ya no está publicada (se borró de Cloudflare).
-- El progreso de los juegos solo se guarda en el navegador de cada uno.
+- El solver no puede con 3-2, J-3 enteros (demasiados estados); se comprobaron por tramos y salen bien.
+- El progreso se guarda solo en el navegador de cada uno.

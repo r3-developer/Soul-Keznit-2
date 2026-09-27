@@ -73,12 +73,11 @@
   document.querySelectorAll('.player').forEach(player => {
     const stage = player.querySelector('.stage');
     const start = player.querySelector('.stage-start');
-    const src = player.dataset.src;
     let frame = null;
     const load = () => {
-      if (frame) return;
+      if (frame && frame.isConnected) return;
       frame = document.createElement('iframe');
-      frame.src = src;
+      frame.src = player.dataset.src;
       frame.title = player.dataset.title || 'Juego';
       frame.allow = 'autoplay; fullscreen; gamepad';
       frame.setAttribute('allowfullscreen', '');
@@ -95,8 +94,8 @@
       frame && frame.focus();
     });
     player.querySelector('[data-action="restart"]')?.addEventListener('click', () => {
-      if (!frame) return;
-      frame.src = src;
+      if (!frame || !frame.isConnected) return;
+      frame.src = player.dataset.src;
     });
     // Si se llega con #jugar desde otra página, prepara el juego
     document.querySelectorAll('a[href="#jugar"]').forEach(a => a.addEventListener('click', load));
