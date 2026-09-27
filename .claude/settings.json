@@ -1,0 +1,7 @@
+{
+  "model": "opus",
+  "effortLevel": "medium",
+  "maxEffortLevel": "high",
+  "bashOutputMaxChars": 12000,
+  "language": "spanish"
+}
