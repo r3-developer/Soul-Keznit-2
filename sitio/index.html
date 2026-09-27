@@ -103,6 +103,8 @@ p{margin:0}
 .nav-links::-webkit-scrollbar{display:none}
 .nav-links a{color:var(--text);opacity:.8;font-size:13px;white-space:nowrap;letter-spacing:-.01em}
 .nav-links a:hover{opacity:1;text-decoration:none}
+.nav-links a[aria-current]{opacity:1;color:var(--accent-text);font-weight:600}
+.next-cat{padding-block:48px;text-align:center;border-top:1px solid var(--line)}
 @media (max-width:640px){
   .nav .wrap{gap:16px}
   .brand{font-size:17px}
@@ -354,13 +356,12 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   <div class="wrap">
     <a class="brand" href="#inicio">Taller de Juegos</a>
     <div class="nav-links">
+      <a href="#inicio">Inicio</a>
       <a href="#plataforma">Plataforma</a>
       <a href="#creditos">Créditos</a>
       <a href="#primer-juego">Tu primer juego</a>
-      <a href="#codigo">El código</a>
-      <a href="#publicar">Publicar</a>
       <a href="#roblox">Roblox</a>
-      <a href="#plantillas">Plantillas</a>
+      <a href="#recursos">Recursos</a>
     </div>
   </div>
 </nav>
@@ -368,7 +369,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 <main>
 
 <!-- ============ HERO ============ -->
-<section class="hero" id="inicio">
+<section class="hero" id="inicio" data-cat="inicio">
   <div class="wrap">
     <p class="eyebrow">Hacer juegos con Claude</p>
     <h1>Tus ideas.<br><span>Ahora, jugables.</span></h1>
@@ -392,7 +393,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 </section>
 
 <!-- ============ PLATAFORMA ============ -->
-<section class="alt" id="plataforma">
+<section class="alt" id="plataforma" data-cat="plataforma">
   <div class="wrap">
     <div class="head">
       <p class="eyebrow">Dónde hacer tus juegos</p>
@@ -460,7 +461,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 </section>
 
 <!-- ============ CREDITOS ============ -->
-<section id="creditos">
+<section id="creditos" data-cat="creditos">
   <div class="wrap">
     <div class="head">
       <p class="eyebrow">Ahorra créditos</p>
@@ -536,7 +537,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 </section>
 
 <!-- ============ PRIMER JUEGO ============ -->
-<section class="alt" id="primer-juego">
+<section class="alt" id="primer-juego" data-cat="primer-juego">
   <div class="wrap">
     <div class="head">
       <p class="eyebrow">Tu primer juego web</p>
@@ -638,7 +639,7 @@ No me expliques el código.</pre>
 </section>
 
 <!-- ============ CODIGO ============ -->
-<section id="codigo">
+<section id="codigo" data-cat="primer-juego">
   <div class="wrap">
     <div class="head">
       <p class="eyebrow">El código</p>
@@ -682,7 +683,7 @@ No me expliques el código.</pre>
 </section>
 
 <!-- ============ PUBLICAR ============ -->
-<section class="alt" id="publicar">
+<section class="alt" id="publicar" data-cat="primer-juego">
   <div class="wrap">
     <div class="head">
       <p class="eyebrow">Publicar en Cloudflare</p>
@@ -742,7 +743,7 @@ No me expliques el código.</pre>
 </section>
 
 <!-- ============ ROBLOX ============ -->
-<section id="roblox">
+<section id="roblox" data-cat="roblox">
   <div class="wrap">
     <div class="head">
       <p class="eyebrow">Si trabajas en Roblox</p>
@@ -778,7 +779,7 @@ No me expliques el código.</pre>
 </section>
 
 <!-- ============ RECURSOS ============ -->
-<section class="alt" id="recursos">
+<section class="alt" id="recursos" data-cat="recursos">
   <div class="wrap">
     <div class="head">
       <p class="eyebrow">Gráficos y sonidos</p>
@@ -795,7 +796,7 @@ No me expliques el código.</pre>
 </section>
 
 <!-- ============ PLANTILLAS ============ -->
-<section id="plantillas">
+<section id="plantillas" data-cat="recursos">
   <div class="wrap">
     <div class="head">
       <p class="eyebrow">Plantillas</p>
@@ -841,7 +842,7 @@ No cambies nada de la jugabilidad.</pre>
 </section>
 
 <!-- ============ RESUMEN ============ -->
-<section class="alt">
+<section class="alt" id="resumen" data-cat="inicio">
   <div class="wrap narrow">
     <div class="head">
       <p class="eyebrow">En resumen</p>
@@ -856,6 +857,8 @@ No cambies nada de la jugabilidad.</pre>
     </ul>
   </div>
 </section>
+
+<div class="next-cat" id="next" hidden><a class="btn" id="next-link" href="#"></a></div>
 
 </main>
 
@@ -1227,6 +1230,36 @@ bucle();
   else window.addEventListener('resize', resize);
 
   reset(); makeEmbers(); resize(); run();
+})();
+</script>
+<script>
+// Pestañas: cada categoría del menú se ve en su propia pantalla
+(function(){
+  var secs = [].slice.call(document.querySelectorAll('main > section[data-cat]'));
+  var links = [].slice.call(document.querySelectorAll('.nav-links a'));
+  var next = document.getElementById('next'), nextLink = document.getElementById('next-link');
+  function show(){
+    var id = location.hash.slice(1) || 'inicio';
+    var el = document.getElementById(id);
+    var sec = el && el.closest('main > section[data-cat]');
+    var cat = sec ? sec.getAttribute('data-cat') : 'inicio';
+    secs.forEach(function(s){ s.hidden = s.getAttribute('data-cat') !== cat; });
+    var i = -1;
+    links.forEach(function(a, n){
+      if (a.getAttribute('href') === '#' + cat){ a.setAttribute('aria-current', 'page'); i = n; }
+      else a.removeAttribute('aria-current');
+    });
+    var n = links[i + 1];
+    next.hidden = !n;
+    if (n){ nextLink.href = n.getAttribute('href'); nextLink.textContent = 'Siguiente: ' + n.textContent + ' →'; }
+    var sub = sec && id !== cat;
+    requestAnimationFrame(function(){
+      if (sub) el.scrollIntoView({behavior: 'instant'});
+      else window.scrollTo({top: 0, behavior: 'instant'});
+    });
+  }
+  window.addEventListener('hashchange', show);
+  show();
 })();
 </script>
 </body>
