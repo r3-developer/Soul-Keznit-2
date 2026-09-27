@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>R3K1 · Juegos</title>
+<meta name="description" content="R3K1 (TheKittyBoyfriend), desarrollador de videojuegos. Juega a la saga Soul Keznit en el navegador.">
+<meta property="og:title" content="R3K1 · Juegos">
+<meta property="og:description" content="Juegos oscuros, difíciles y con alma. Juega a la saga Soul Keznit.">
+<meta property="og:image" content="/img/sk2/portada.svg">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<link rel="icon" href="/img/sk2/emblema.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=EB+Garamond:ital@1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+/* ---------- Hero ---------- */
+.hero{min-height:100svh;display:grid;place-items:center;text-align:center;padding:120px 0 80px;overflow:hidden}
+.hero-inner{transform:scale(calc(1 - var(--scroll,0) * .12));opacity:calc(1 - var(--scroll,0) * 1.2);will-change:transform,opacity}
+.glow{position:absolute;inset:-20% -10% auto;height:120%;pointer-events:none;z-index:-1;filter:blur(80px);opacity:.55}
+.glow i{position:absolute;border-radius:50%;animation:float 18s ease-in-out infinite alternate}
+.glow i:nth-child(1){width:46vmax;height:46vmax;left:10%;top:0;background:radial-gradient(circle,#ff375f 0,transparent 65%)}
+.glow i:nth-child(2){width:40vmax;height:40vmax;right:5%;top:10%;background:radial-gradient(circle,#bf5af2 0,transparent 65%);animation-delay:-6s}
+.glow i:nth-child(3){width:34vmax;height:34vmax;left:35%;top:30%;background:radial-gradient(circle,#e5243b 0,transparent 65%);animation-delay:-12s}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]) .glow{opacity:.22}}
+@keyframes float{0%{transform:translate(0,0) scale(1)}50%{transform:translate(6vw,-4vh) scale(1.1)}100%{transform:translate(-5vw,5vh) scale(.95)}}
+.avatar{width:84px;height:84px;margin:0 auto 26px;border-radius:50%;background:#111;padding:6px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.08),0 10px 40px rgba(229,36,59,.35)}
+.hero h1{font-size:clamp(88px,22vw,240px);font-weight:800;letter-spacing:-.06em;line-height:.9}
+.hero .aka{margin-top:22px;font-size:clamp(19px,2.4vw,26px);font-weight:600;letter-spacing:-.02em}
+.hero .aka span{color:var(--text-2);font-weight:500}
+.hero .lead{max-width:620px;margin:14px auto 0}
+.scroll-cue{position:absolute;left:50%;bottom:28px;width:24px;height:38px;margin-left:-12px;border-radius:12px;border:2px solid var(--text-2);opacity:.5}
+.scroll-cue::after{content:"";position:absolute;left:50%;top:7px;width:4px;height:8px;margin-left:-2px;border-radius:2px;background:var(--text-2);animation:cue 1.8s var(--ease) infinite}
+@keyframes cue{0%{transform:translateY(0);opacity:1}70%{transform:translateY(12px);opacity:0}100%{opacity:0}}
+
+/* ---------- Saga ---------- */
+.saga{background:#000;color:#f5f5f7;overflow:hidden;--text:#f5f5f7;--text-2:#a1a1a6;--tile:#111113;--accent:#e5243b;--accent-text:#ff5a6e}
+.saga .cover{position:relative;max-width:900px;margin:0 auto;border-radius:32px;overflow:hidden;
+  box-shadow:0 40px 120px rgba(229,36,59,.25)}
+.saga .cover img{width:100%;animation:kenburns 24s ease-in-out infinite alternate}
+@keyframes kenburns{from{transform:scale(1)}to{transform:scale(1.08) translateY(-1.5%)}}
+.saga .cover::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55),transparent 40%)}
+.saga h2 .display{display:block;font-size:.62em;color:#e5243b;margin-bottom:10px;letter-spacing:.14em}
+.chapters{margin-top:clamp(56px,8vw,96px)}
+.chapter{padding:34px 30px 30px;display:flex;flex-direction:column;min-height:420px;background:#111113}
+.chapter .num{font-family:var(--display);font-size:64px;line-height:1;color:#e5243b;opacity:.9}
+.chapter h3{margin-top:18px;font-size:28px;font-weight:700;letter-spacing:-.02em}
+.chapter p{margin-top:10px;color:#a1a1a6}
+.chapter .art{margin:22px -30px 0;flex:1;display:grid;place-items:center;overflow:hidden;min-height:150px}
+.chapter .art img{width:100%;height:100%;object-fit:cover;transition:transform 1s var(--ease)}
+.chapter:hover .art img{transform:scale(1.05)}
+.chapter .go{margin-top:22px;display:flex;gap:18px;flex-wrap:wrap;font-size:15px}
+.chapter.soon .art{background:radial-gradient(circle at 50% 60%,rgba(229,36,59,.35),transparent 60%)}
+.chapter.soon .art b{font-family:var(--display);font-size:120px;color:#fff;text-shadow:0 0 40px rgba(229,36,59,.9);animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{50%{text-shadow:0 0 80px rgba(229,36,59,1),0 0 10px #ff375f;opacity:.85}}
+.badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:980px;background:rgba(229,36,59,.16);color:#ff5a6e;align-self:flex-start}
+
+/* ---------- Juegos ---------- */
+.games .tile{display:block;color:var(--text);padding:40px 36px 0;min-height:480px;text-align:center}
+.games .tile:hover{text-decoration:none}
+.games .tile h3{font-size:clamp(28px,3.4vw,40px);font-weight:700;letter-spacing:-.03em}
+.games .tile p{margin-top:6px;color:var(--text-2);font-size:19px}
+.games .tile .more{display:inline-block;margin-top:14px;color:var(--accent-text)}
+.games .tile .shot{margin:30px auto 0;max-width:420px;border-radius:18px 18px 0 0;overflow:hidden;box-shadow:0 -10px 50px rgba(0,0,0,.25);transition:transform .8s var(--ease)}
+.games .tile:hover .shot{transform:translateY(-8px)}
+.games .tile.dark{background:#000;color:#f5f5f7;--text:#f5f5f7;--text-2:#a1a1a6;--accent-text:#2997ff}
+.games .tile.next{display:grid;place-items:center;align-content:center;gap:10px;border:2px dashed var(--line);background:transparent}
+.games .tile.next .q{font-size:96px;font-weight:800;letter-spacing:-.05em;color:var(--line);line-height:1}
+.chips{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+.chip{font-size:12px;padding:4px 10px;border-radius:980px;background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--text-2)}
+
+/* ---------- Sobre mí ---------- */
+.about{display:grid;grid-template-columns:1.1fr 1fr;gap:clamp(32px,6vw,80px);align-items:center}
+.about p{margin-top:18px;font-size:19px;color:var(--text-2)}
+.about p strong{color:var(--text)}
+.ids{display:grid;gap:16px}
+.id{padding:26px 28px;display:flex;align-items:center;gap:18px;background:var(--tile)}
+.id .ic{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;font-weight:800;font-size:18px;flex:none}
+.id .ic.r{background:linear-gradient(135deg,#ff375f,#bf5af2);color:#fff;letter-spacing:-.02em}
+.id .ic.k{background:#111;padding:6px}
+.id small{display:block;color:var(--text-2);font-size:13px}
+.id b{font-size:22px;letter-spacing:-.02em}
+@media (max-width:820px){.about{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="/">R3K<b>1</b></a>
+    <ul>
+      <li><a href="#saga">Soul Keznit</a></li>
+      <li><a href="#juegos">Juegos</a></li>
+      <li class="hide-sm"><a href="#sobre-mi">Sobre mí</a></li>
+    </ul>
+  </div>
+</header>
+
+<main>
+  <!-- Hero -->
+  <section class="hero" aria-labelledby="titulo">
+    <div class="glow" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="hero-inner wrap">
+      <img class="avatar fade-up" style="--delay:.05s" src="/img/sk2/emblema.svg" alt="">
+      <h1 id="titulo" class="grad" data-letters>R3K1</h1>
+      <p class="aka fade-up" style="--delay:.7s">Desarrollador de videojuegos. <span>También conocido como TheKittyBoyfriend.</span></p>
+      <p class="lead fade-up" style="--delay:.85s">Juegos oscuros, difíciles y con alma. Hechos a mano, uno a uno.</p>
+      <div class="ctas fade-up" style="--delay:1s">
+        <a class="btn" href="#juegos">Ver los juegos</a>
+        <a class="link-arrow" href="/soul-keznit-2/#jugar">Jugar a Soul Keznit 2</a>
+      </div>
+    </div>
+    <span class="scroll-cue" aria-hidden="true"></span>
+  </section>
+
+  <!-- Frase -->
+  <section class="sec">
+    <div class="wrap">
+      <p class="statement">Empecé haciendo plataformas en Scratch. Cada juego es más grande que el anterior. El siguiente ya no cabe en Scratch.</p>
+    </div>
+  </section>
+
+  <!-- Saga Soul Keznit -->
+  <section class="sec saga" id="saga" aria-labelledby="saga-t">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="saga-t" class="h-lg reveal"><span class="display">Soul Keznit</span>Un alma. Un abismo.<br>Tres juegos.</h2>
+        <p class="lead reveal" data-d="1">Keznit murió defendiendo a los suyos. Entregó su alma a cambio de sus vidas y lo arrastraron al abismo… pero nunca se arrodilló.</p>
+      </div>
+      <a class="cover reveal zoom" href="/soul-keznit-2/" style="display:block" aria-label="Soul Keznit 2">
+        <img src="/img/sk2/portada.svg" alt="Portada de Soul Keznit 2: dos manos encadenadas sujetan un alma blanca">
+      </a>
+
+      <div class="chapters grid g3">
+        <article class="card chapter lift reveal" data-d="1">
+          <span class="num">I</span>
+          <h3>Soul Keznit</h3>
+          <p>Donde empezó todo. Mi primer plataformas, remasterizado.</p>
+          <div class="art"><img src="/img/sk1/portada.svg" alt="" loading="lazy"></div>
+          <div class="go"><a class="link-arrow" href="/soul-keznit/">Saber más</a><a class="link-arrow" href="/soul-keznit/#jugar">Jugar</a></div>
+        </article>
+        <article class="card chapter lift reveal" data-d="2">
+          <span class="num">II</span>
+          <h3>Soul Keznit 2</h3>
+          <p>24 niveles, 5 jefes y una historia. El alma nunca se rinde.</p>
+          <div class="art"><img src="/img/sk2/titulo.svg" alt="" loading="lazy"></div>
+          <div class="go"><a class="link-arrow" href="/soul-keznit-2/">Saber más</a><a class="link-arrow" href="/soul-keznit-2/#jugar">Jugar</a></div>
+        </article>
+        <article class="card chapter soon lift reveal" data-d="3">
+          <span class="badge">En desarrollo</span>
+          <h3>Soul Keznit 3</h3>
+          <p>Esta vez, fuera de Scratch. Hecho para la web desde cero.</p>
+          <div class="art"><b aria-hidden="true">III</b></div>
+          <div class="go"><a class="link-arrow" href="/soul-keznit-3/">Ver el avance</a></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Juegos -->
+  <section class="sec games" id="juegos" aria-labelledby="juegos-t">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="juegos-t" class="h-lg reveal">Juegos.</h2>
+        <p class="lead reveal" data-d="1">Todos se juegan aquí mismo, en el navegador. Sin descargar nada.</p>
+      </div>
+      <div class="grid g2">
+        <a class="card tile dark lift reveal" href="/soul-keznit-2/">
+          <h3>Soul Keznit 2</h3>
+          <p>El alma nunca se rinde.</p>
+          <div class="chips"><span class="chip">Plataformas</span><span class="chip">Jefes</span><span class="chip">ES / EN</span></div>
+          <span class="more link-arrow">Jugar ahora</span>
+          <div class="shot"><img src="/img/sk2/portada.svg" alt="" loading="lazy"></div>
+        </a>
+        <a class="card tile lift reveal" data-d="1" href="/soul-keznit/">
+          <h3>Soul Keznit</h3>
+          <p>El primero. Remasterizado.</p>
+          <div class="chips"><span class="chip">Plataformas</span><span class="chip">ES / EN</span></div>
+          <span class="more link-arrow">Jugar ahora</span>
+          <div class="shot"><img src="/img/sk1/portada.svg" alt="" loading="lazy"></div>
+        </a>
+        <a class="card tile dark lift reveal" href="/soul-keznit-3/">
+          <h3>Soul Keznit 3</h3>
+          <p>Próximamente. En la web.</p>
+          <div class="chips"><span class="chip">En desarrollo</span></div>
+          <span class="more link-arrow">Ver el avance</span>
+          <div class="shot" style="background:radial-gradient(circle at 50% 70%,rgba(229,36,59,.45),#000 65%);aspect-ratio:4/3;display:grid;place-items:center">
+            <span class="display" style="font-size:96px;color:#fff;text-shadow:0 0 40px rgba(229,36,59,.9)">III</span>
+          </div>
+        </a>
+        <div class="card tile next reveal" data-d="1">
+          <span class="q" aria-hidden="true">?</span>
+          <h3>Más juegos</h3>
+          <p>En camino.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sobre mí -->
+  <section class="sec alt" id="sobre-mi" aria-labelledby="sobre-t">
+    <div class="wrap about">
+      <div class="reveal">
+        <p class="eyebrow">Sobre mí</p>
+        <h2 id="sobre-t" class="h-md" style="margin-top:10px">Soy R3K1.</h2>
+        <p><strong>R3K1</strong> es mi nombre de desarrollador de siempre. En Scratch publico como <strong>TheKittyBoyfriend</strong>, pero es la misma persona detrás de cada juego.</p>
+        <p>Me gustan los juegos que no perdonan: plataformas precisas, jefes con historia y mundos oscuros donde rendirse no es una opción.</p>
+        <div class="ctas" style="justify-content:flex-start">
+          <a class="link-arrow" href="https://scratch.mit.edu/users/TheKittyBoyfriend/" target="_blank" rel="noopener">Perfil de Scratch</a>
+        </div>
+      </div>
+      <div class="ids">
+        <div class="card id reveal" data-d="1"><span class="ic r">R3</span><div><small>Nombre de desarrollador</small><b>R3K1</b></div></div>
+        <div class="card id reveal" data-d="2"><span class="ic k"><img src="/img/sk2/emblema.svg" alt=""></span><div><small>En Scratch</small><b>TheKittyBoyfriend</b></div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© <span data-year></span> R3K1 · TheKittyBoyfriend</span>
+    <span><a href="/soul-keznit/">Soul Keznit</a> · <a href="/soul-keznit-2/">Soul Keznit 2</a> · <a href="/soul-keznit-3/">Soul Keznit 3</a></span>
+  </div>
+</footer>
+
+<script src="/assets/site.js"></script>
+</body>
+</html>

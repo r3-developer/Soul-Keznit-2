@@ -43,7 +43,7 @@ El alma nunca se rinde.
 Desarrollo y diseño: TheKittyBoyfriend
 Historia, niveles, jefes, arte y animaciones: TheKittyBoyfriend
 Música: [autor de la música del juego]
-"She Knows": [artista original]
+"She Knows" (8 Bit Remix): 8 Bit Universe, original de J. Cole
 Tipografías: [nombres de las fuentes]
 
 Gracias a todos los que han jugado a Soul Keznit.

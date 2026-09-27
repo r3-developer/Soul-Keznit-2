@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Soul Keznit · R3K1</title>
+<meta name="description" content="Juega a Soul Keznit, el primer plataformas de R3K1 (TheKittyBoyfriend), remasterizado. Gratis en el navegador.">
+<meta property="og:title" content="Soul Keznit">
+<meta property="og:description" content="Donde empezó todo. Juega gratis en el navegador.">
+<meta property="og:image" content="/img/sk1/portada.svg">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="/img/sk2/emblema.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=EB+Garamond:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/game.css">
+<style>
+.sk1-hero h1{font-family:Georgia,"Times New Roman",serif;font-weight:400;letter-spacing:.02em}
+.sk1-hero .art{background:#111;box-shadow:0 40px 140px rgba(255,255,255,.08)}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:14px}
+.legend .key{display:flex;gap:16px;align-items:center}
+.legend .sw{flex:none;width:40px;height:40px;border-radius:10px}
+.legend .key p{margin:0}
+.path{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.step{background:var(--tile);border-radius:22px;overflow:hidden}
+.step img{width:100%;aspect-ratio:4/3;object-fit:cover;background:#111}
+.step div{padding:16px 18px 18px}
+.step small{color:var(--text-2);font-size:13px}
+.step b{display:block;font-size:19px;letter-spacing:-.02em}
+.quote{max-width:780px;margin:0 auto;text-align:center}
+.quote p{font-family:Georgia,"Times New Roman",serif;font-size:clamp(24px,3.4vw,36px);line-height:1.35}
+.quote small{display:block;margin-top:18px;color:var(--text-2);font-size:15px}
+</style>
+</head>
+<body class="has-subnav">
+
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="/">R3K<b>1</b></a>
+    <ul>
+      <li><a href="/#saga" aria-current="page">Soul Keznit</a></li>
+      <li><a href="/#juegos">Juegos</a></li>
+      <li class="hide-sm"><a href="/#sobre-mi">Sobre mí</a></li>
+    </ul>
+  </div>
+</header>
+<div class="subnav">
+  <div class="wrap">
+    <strong>Soul Keznit</strong>
+    <nav aria-label="Secciones">
+      <a href="#como">Cómo se juega</a>
+      <a href="#niveles">Niveles</a>
+      <a class="pill" href="#jugar">Jugar</a>
+    </nav>
+  </div>
+</div>
+
+<main>
+  <section class="g-hero sk1-hero">
+    <div class="wrap">
+      <p class="eyebrow fade-up" style="--delay:.1s">Capítulo I de la saga · Remasterizado</p>
+      <h1 class="fade-up" style="--delay:.2s">SOUL KEZNIT</h1>
+      <p class="tag serif fade-up" style="--delay:.4s">Donde empezó todo.</p>
+      <div class="ctas fade-up" style="--delay:.55s">
+        <a class="btn" href="#jugar">Jugar ahora</a>
+        <a class="link-arrow" href="/soul-keznit-2/">Ir a Soul Keznit 2</a>
+      </div>
+      <div class="art fade-up" style="--delay:.7s"><img src="/img/sk1/portada.svg" alt="Pantalla final de Soul Keznit con la llave, el trampolín y la bandera"></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="wrap quote">
+      <p class="reveal">«Hola, y gracias por jugar mi juego. Este juego es una versión remasterizada de mi primer juego de plataformas. Espero que te diviertas.»</p>
+      <small class="reveal" data-d="1">R3K1, en la pantalla de inicio</small>
+    </div>
+  </section>
+
+  <!-- Jugar -->
+  <section class="sec alt" id="jugar" aria-labelledby="jugar-t">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="jugar-t" class="h-lg reveal">Juega aquí.</h2>
+        <p class="lead reveal" data-d="1">Pulsa play, elige Español o English y a saltar.</p>
+      </div>
+      <div class="player reveal" data-src="/play/sk1/" data-title="Soul Keznit">
+        <div class="stage">
+          <button class="stage-start" type="button" aria-label="Cargar y jugar a Soul Keznit">
+            <img src="/img/sk1/portada.svg" alt="">
+            <span class="play"><i aria-hidden="true"></i>Jugar</span>
+          </button>
+        </div>
+        <div class="player-bar">
+          <span>Tu nivel se guarda en este navegador.</span>
+          <span class="btns">
+            <button type="button" data-action="restart" data-needs-game disabled>Reiniciar</button>
+            <button type="button" data-action="fullscreen">Pantalla completa</button>
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cómo se juega -->
+  <section class="sec" id="como" aria-labelledby="como-t">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="como-t" class="h-lg reveal">Simple.<br>Nada fácil.</h2>
+        <p class="lead reveal" data-d="1">Coge la llave, abre la puerta y llega a la bandera verde.</p>
+      </div>
+      <div class="keys" style="margin-top:0">
+        <div class="key reveal"><div class="caps"><kbd>A</kbd><kbd>D</kbd><kbd>←</kbd><kbd>→</kbd></div><p>Moverse</p></div>
+        <div class="key reveal" data-d="1"><div class="caps"><kbd>W</kbd><kbd>↑</kbd></div><p>Saltar. En el aire, doble salto.</p></div>
+      </div>
+      <div class="legend">
+        <div class="key reveal"><span class="sw" style="background:#ff3b3b"></span><p>Lo rojo te mata.</p></div>
+        <div class="key reveal" data-d="1"><span class="sw" style="background:#ffa53b"></span><p>Lo naranja te impulsa hacia arriba.</p></div>
+        <div class="key reveal" data-d="2"><span class="sw" style="background:#9bff3b"></span><p>La bandera verde te lleva al siguiente nivel.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Niveles -->
+  <section class="sec alt" id="niveles" aria-labelledby="niveles-t">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="niveles-t" class="h-lg reveal">El camino.</h2>
+        <p class="lead reveal" data-d="1">Un tutorial, cuatro niveles y un final… ¿o no?</p>
+      </div>
+      <div class="path">
+        <div class="step reveal"><img src="/img/sk1/titulo.svg" alt="" loading="lazy"><div><small>Inicio</small><b>Tutorial</b></div></div>
+        <div class="step reveal" data-d="1"><img src="/img/sk1/nivel2.svg" alt="" loading="lazy"><div><small>Niveles 1 a 4</small><b>Plataformas</b></div></div>
+        <div class="step reveal" data-d="2"><img src="/img/sk1/final.svg" alt="" loading="lazy"><div><small>Final</small><b>El final… ¿o no?</b></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="creditos-t">
+    <div class="wrap credits">
+      <h2 id="creditos-t" class="h-md reveal">Créditos.</h2>
+      <dl>
+        <div class="reveal"><dt>Desarrollo</dt><dd>R3K1 · TheKittyBoyfriend</dd></div>
+        <div class="reveal" data-d="1"><dt>Música</dt><dd>“She Knows” (8 Bit Remix), 8 Bit Universe · original de J. Cole</dd></div>
+        <div class="reveal" data-d="2"><dt>Hecho con</dt><dd>Scratch</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="sec" style="padding-top:0">
+    <div class="wrap">
+      <a class="next reveal zoom" href="/soul-keznit-2/">
+        <canvas class="embers" aria-hidden="true"></canvas>
+        <p class="eyebrow">Capítulo II</p>
+        <h2 class="h-lg" style="margin-top:10px">Soul Keznit 2</h2>
+        <p class="lead" style="margin-top:12px">El alma nunca se rinde.</p>
+        <span class="link-arrow">Seguir la historia</span>
+      </a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© <span data-year></span> R3K1 · TheKittyBoyfriend</span>
+    <span><a href="/">Inicio</a> · <a href="/soul-keznit-2/">Soul Keznit 2</a> · <a href="/soul-keznit-3/">Soul Keznit 3</a></span>
+  </div>
+</footer>
+
+<script src="/assets/site.js"></script>
+</body>
+</html>
