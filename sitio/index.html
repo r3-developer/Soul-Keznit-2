@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Cómo hacer juegos web con Claude sin gastar todos tus créditos.">
+<title>Taller de Juegos</title>
+<style>
+:root{
+  --bg:#ffffff;
+  --bg-alt:#f5f5f7;
+  --tile:#f5f5f7;
+  --tile-alt:#ffffff;
+  --text:#1d1d1f;
+  --text-2:#6e6e73;
+  --line:#d2d2d7;
+  --accent:#0071e3;
+  --accent-text:#0066cc;
+  --accent-ink:#ffffff;
+  --nav-bg:rgba(255,255,255,.76);
+  --good:#248a3d;
+  --mid:#b25000;
+  --bad:#d70015;
+  --dot-good:#34c759;
+  --dot-mid:#ff9f0a;
+  --dot-bad:#ff3b30;
+  --code-bg:#161618;
+  --code-text:#e8e8ed;
+  --code-dim:#8e8e93;
+  --code-accent:#64d2ff;
+  --shadow:0 2px 12px rgba(0,0,0,.06);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:"SF Mono",ui-monospace,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#000000;
+    --bg-alt:#0d0d0f;
+    --tile:#161618;
+    --tile-alt:#1c1c1e;
+    --text:#f5f5f7;
+    --text-2:#a1a1a6;
+    --line:#38383a;
+    --accent:#0a84ff;
+    --accent-text:#2997ff;
+    --accent-ink:#ffffff;
+    --nav-bg:rgba(22,22,23,.76);
+    --good:#30d158;
+    --mid:#ffb340;
+    --bad:#ff6961;
+    --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#000000;
+  --bg-alt:#0d0d0f;
+  --tile:#161618;
+  --tile-alt:#1c1c1e;
+  --text:#f5f5f7;
+  --text-2:#a1a1a6;
+  --line:#38383a;
+  --accent:#0a84ff;
+  --accent-text:#2997ff;
+  --accent-ink:#ffffff;
+  --nav-bg:rgba(22,22,23,.76);
+  --good:#30d158;
+  --mid:#ffb340;
+  --bad:#ff6961;
+  --shadow:none;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:17px;line-height:1.47;letter-spacing:-.022em;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--accent-text);text-decoration:none}
+a:hover{text-decoration:underline}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:6px}
+h1,h2,h3,h4{margin:0;text-wrap:balance;letter-spacing:-.028em}
+p{margin:0}
+
+.wrap{max-width:1024px;margin:0 auto;padding-inline:22px}
+.narrow{max-width:720px}
+
+/* ---------- Nav ---------- */
+.nav{
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:50;
+  background:var(--nav-bg);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent);
+}
+.nav .wrap{display:flex;align-items:center;gap:24px;height:52px}
+.brand{font-weight:600;font-size:19px;color:var(--text);white-space:nowrap;letter-spacing:-.02em}
+.brand:hover{text-decoration:none}
+.nav-links{display:flex;gap:22px;overflow-x:auto;scrollbar-width:none;margin-left:auto;padding-block:4px}
+.nav-links::-webkit-scrollbar{display:none}
+.nav-links a{color:var(--text);opacity:.8;font-size:13px;white-space:nowrap;letter-spacing:-.01em}
+.nav-links a:hover{opacity:1;text-decoration:none}
+@media (max-width:640px){
+  .nav .wrap{gap:16px}
+  .brand{font-size:17px}
+}
+
+/* ---------- Sections ---------- */
+section{padding-block:96px}
+.alt{background:var(--bg-alt)}
+.eyebrow{font-size:19px;font-weight:600;color:var(--text-2);letter-spacing:-.01em;margin-bottom:8px}
+.h2{font-size:clamp(34px,5.4vw,56px);font-weight:700;line-height:1.07}
+.lead{font-size:clamp(19px,2.2vw,24px);line-height:1.38;color:var(--text-2);margin-top:16px;max-width:36em;font-weight:500;letter-spacing:-.02em}
+.lead strong{color:var(--text);font-weight:600}
+.head{margin-bottom:56px}
+.head.center{text-align:center}
+.head.center .lead{margin-inline:auto}
+@media (max-width:640px){
+  section{padding-block:64px}
+  .head{margin-bottom:36px}
+}
+
+/* ---------- Hero ---------- */
+.hero{padding-block:72px 88px;text-align:center}
+.hero h1{font-size:clamp(46px,8.6vw,96px);font-weight:700;line-height:1.02;letter-spacing:-.045em}
+.hero h1 span{color:var(--text-2)}
+.hero .lead{margin:22px auto 0;max-width:30em}
+.hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;border-radius:980px;
+  font:inherit;font-size:17px;padding:11px 22px;cursor:pointer;border:0;
+  background:var(--accent);color:var(--accent-ink);
+}
+.btn:hover{text-decoration:none;filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:var(--accent-text);box-shadow:inset 0 0 0 1px var(--accent-text)}
+.link-more::after{content:" ›"}
+
+/* ---------- Demo game ---------- */
+.stage{
+  position:relative;margin:56px auto 0;max-width:980px;
+  border-radius:28px;overflow:hidden;background:#050507;
+  aspect-ratio:16/7;width:100%;
+  box-shadow:0 30px 80px -30px rgba(0,40,80,.45);
+  touch-action:manipulation;user-select:none;-webkit-user-select:none;cursor:pointer;
+}
+@media (max-width:640px){.stage{aspect-ratio:4/3;border-radius:20px}}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hud{
+  position:absolute;top:18px;right:22px;display:flex;gap:18px;
+  font-family:var(--mono);font-size:13px;color:#a1a1a6;font-variant-numeric:tabular-nums;letter-spacing:.04em;pointer-events:none;
+}
+.hud b{color:#f5f5f7;font-weight:600}
+.overlay{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  color:#f5f5f7;text-align:center;padding:20px;pointer-events:none;
+}
+.overlay .play{
+  pointer-events:auto;background:rgba(255,255,255,.14);color:#fff;
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.22);
+}
+.overlay .play:hover{background:rgba(255,255,255,.22)}
+.overlay small{color:#a1a1a6;font-size:13px}
+.overlay .result{font-size:clamp(22px,3vw,30px);font-weight:600;letter-spacing:-.02em}
+.stage-caption{margin-top:14px;font-size:14px;color:var(--text-2)}
+
+/* ---------- Platform compare ---------- */
+.compare{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media (max-width:860px){.compare{grid-template-columns:1fr}}
+.plat{
+  background:var(--tile-alt);border-radius:24px;padding:30px 28px 28px;
+  display:flex;flex-direction:column;gap:18px;box-shadow:var(--shadow);
+}
+.plat.pick{box-shadow:inset 0 0 0 2px var(--accent),var(--shadow)}
+.tag{
+  align-self:flex-start;font-size:12px;font-weight:600;letter-spacing:.02em;
+  padding:4px 10px;border-radius:980px;background:var(--tile);color:var(--text-2);
+}
+.plat.pick .tag{background:var(--accent);color:var(--accent-ink)}
+.plat h3{font-size:28px;font-weight:700}
+.plat .sub{color:var(--text-2);font-size:15px;margin-top:-10px}
+.rows{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.rows li{display:flex;justify-content:space-between;gap:14px;padding-block:11px;border-bottom:1px solid var(--line);font-size:15px}
+.rows li span:first-child{color:var(--text-2)}
+.rows li span:last-child{text-align:right;font-weight:500;display:inline-flex;align-items:center;gap:7px}
+.rows i{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.rows i.g{background:var(--dot-good)} .rows i.m{background:var(--dot-mid)} .rows i.b{background:var(--dot-bad)}
+.plat p.verdict{font-size:15px;color:var(--text)}
+.plat p.verdict b{font-weight:600}
+
+.callout{
+  margin-top:28px;background:var(--tile-alt);border-radius:24px;padding:28px;
+  display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center;box-shadow:var(--shadow);
+}
+.callout .num{font-size:44px;font-weight:700;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1}
+.callout .num small{display:block;font-size:13px;font-weight:500;color:var(--text-2);letter-spacing:0;margin-top:6px}
+.callout .stats{display:flex;gap:30px;flex-wrap:wrap}
+@media (max-width:640px){.callout{grid-template-columns:1fr}}
+
+/* ---------- Credits ---------- */
+.meter{display:grid;gap:14px;margin-top:8px}
+.meter-row{display:grid;grid-template-columns:110px 1fr;gap:16px;align-items:center}
+.meter-row .lbl{font-size:14px;color:var(--text-2);font-variant-numeric:tabular-nums}
+.meter-row .lbl b{color:var(--text);font-weight:600}
+.cells{display:flex;flex-wrap:wrap;gap:3px}
+.cells span{width:11px;height:11px;border-radius:3px;background:var(--accent);opacity:.9}
+.cells span.new{background:var(--text)}
+.meter-note{font-size:14px;color:var(--text-2);margin-top:18px;display:flex;gap:18px;flex-wrap:wrap}
+.meter-note span{display:inline-flex;align-items:center;gap:7px}
+.meter-note i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.panel{background:var(--tile);border-radius:24px;padding:32px}
+.two{display:grid;grid-template-columns:1.25fr 1fr;gap:20px}
+@media (max-width:860px){.two{grid-template-columns:1fr}}
+.panel h3{font-size:24px;font-weight:700;margin-bottom:10px}
+.panel p{color:var(--text-2)}
+.panel p + p{margin-top:12px}
+.panel p b{color:var(--text);font-weight:600}
+
+.bento{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:20px}
+.tile{background:var(--tile);border-radius:24px;padding:28px;display:flex;flex-direction:column;gap:10px}
+.tile.wide{grid-column:span 2}
+.tile h4{font-size:21px;font-weight:700;line-height:1.2}
+.tile p{color:var(--text-2);font-size:16px}
+.tile p b{color:var(--text);font-weight:600}
+.tile .ex{margin-top:auto;padding-top:8px;display:grid;gap:8px;font-size:15px}
+.ex .bad,.ex .good{border-radius:12px;padding:10px 14px;background:var(--bg)}
+.ex .bad::before{content:"Así no  ";color:var(--bad);font-weight:600;font-size:12px;letter-spacing:.02em}
+.ex .good::before{content:"Así sí  ";color:var(--good);font-weight:600;font-size:12px;letter-spacing:.02em}
+kbd{font-family:var(--mono);font-size:.86em;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--text)}
+@media (max-width:860px){
+  .bento{grid-template-columns:repeat(2,1fr)}
+  .tile.wide{grid-column:span 1}
+}
+@media (max-width:560px){.bento{grid-template-columns:1fr}}
+
+/* ---------- Steps ---------- */
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:18px}
+.step{
+  display:grid;grid-template-columns:72px 1fr;gap:10px 24px;
+  background:var(--tile-alt);border-radius:24px;padding:30px;box-shadow:var(--shadow);
+}
+.step .n{font-size:44px;font-weight:700;letter-spacing:-.04em;color:var(--text-2);line-height:1;font-variant-numeric:tabular-nums}
+.step h3{font-size:24px;font-weight:700;margin-bottom:6px}
+.step p{color:var(--text-2)}
+.step p b{color:var(--text);font-weight:600}
+.step .body{display:grid;gap:14px;min-width:0}
+@media (max-width:640px){.step{grid-template-columns:1fr;padding:24px}.step .n{font-size:32px}}
+
+/* ---------- Code ---------- */
+.code{position:relative;background:var(--code-bg);color:var(--code-text);border-radius:18px;overflow:hidden}
+.code-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.code-bar span{font-family:var(--mono);font-size:12px;color:var(--code-dim)}
+.copy{
+  font:inherit;font-size:13px;font-weight:500;cursor:pointer;
+  background:rgba(255,255,255,.1);color:#f5f5f7;border:0;border-radius:980px;padding:5px 12px;
+}
+.copy:hover{background:rgba(255,255,255,.18)}
+.code pre{margin:0;padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:13.5px;line-height:1.6;letter-spacing:0;white-space:pre}
+.code pre.wrapit{white-space:pre-wrap}
+.code .c{color:var(--code-dim)}
+.code .k{color:var(--code-accent)}
+.code.tall pre{max-height:560px}
+
+/* ---------- Loop diagram ---------- */
+.loop{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;position:relative;margin-block:8px 28px}
+.loop .box{background:var(--tile);border-radius:20px;padding:22px}
+.loop .box b{display:block;font-size:19px;margin-bottom:4px;letter-spacing:-.02em}
+.loop .box p{font-size:15px;color:var(--text-2)}
+.loop .box code{font-family:var(--mono);font-size:13px;color:var(--accent-text)}
+.loop-back{grid-column:1/-1;text-align:center;font-size:14px;color:var(--text-2);display:flex;align-items:center;gap:12px}
+.loop-back::before,.loop-back::after{content:"";flex:1;height:1px;background:var(--line)}
+@media (max-width:720px){.loop{grid-template-columns:1fr}}
+
+.tweaks{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:20px}
+@media (max-width:640px){.tweaks{grid-template-columns:1fr}}
+.tweak{background:var(--tile);border-radius:18px;padding:18px 20px;font-size:15px;color:var(--text-2)}
+.tweak b{color:var(--text);font-weight:600;display:block;margin-bottom:4px;font-size:16px}
+.tweak code{font-family:var(--mono);font-size:13px;color:var(--text);background:var(--bg);padding:1px 6px;border-radius:5px}
+
+/* ---------- Publish ---------- */
+.pub{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+@media (max-width:860px){.pub{grid-template-columns:1fr}}
+.pub .card{background:var(--tile-alt);border-radius:24px;padding:30px;display:flex;flex-direction:column;gap:16px;box-shadow:var(--shadow)}
+.pub h3{font-size:26px;font-weight:700}
+.pub .card > p{color:var(--text-2)}
+.olist{margin:0;padding:0;list-style:none;counter-reset:s;display:grid;gap:12px}
+.olist li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:10px;font-size:15.5px}
+.olist li::before{
+  content:counter(s);width:24px;height:24px;border-radius:50%;background:var(--tile);color:var(--text);
+  font-size:12px;font-weight:600;display:grid;place-items:center;margin-top:1px;font-variant-numeric:tabular-nums;
+}
+.olist code,.inline{font-family:var(--mono);font-size:.84em;background:var(--tile);padding:1px 6px;border-radius:5px;color:var(--text)}
+.note{font-size:14px;color:var(--text-2)}
+.pub-extra{margin-top:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media (max-width:860px){.pub-extra{grid-template-columns:1fr}}
+.mini{background:var(--tile-alt);border-radius:20px;padding:24px;box-shadow:var(--shadow)}
+.mini h4{font-size:19px;font-weight:700;margin-bottom:6px}
+.mini p{font-size:15px;color:var(--text-2)}
+
+/* ---------- Roblox ---------- */
+.where{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media (max-width:860px){.where{grid-template-columns:1fr}}
+.where .tile .kind{font-family:var(--mono);font-size:13px;color:var(--accent-text)}
+.where .tile .path{font-size:14px;color:var(--text);font-weight:600}
+.checks{list-style:none;padding:0;margin:20px 0 0;display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+@media (max-width:760px){.checks{grid-template-columns:1fr}}
+.checks li{background:var(--tile);border-radius:20px;padding:24px}
+.checks li > b{display:block;font-size:18px;margin-bottom:4px}
+.checks li p{font-size:15px;color:var(--text-2)}
+.warn b{color:var(--bad)}
+
+/* ---------- Resources ---------- */
+.res{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+@media (max-width:860px){.res{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:480px){.res{grid-template-columns:1fr}}
+.res a{display:flex;flex-direction:column;gap:4px;background:var(--tile-alt);border-radius:20px;padding:22px;color:var(--text);box-shadow:var(--shadow)}
+.res a:hover{text-decoration:none;transform:translateY(-2px)}
+@media (prefers-reduced-motion: no-preference){.res a{transition:transform .2s ease}}
+.res a b{font-size:17px}
+.res a span{font-size:14px;color:var(--text-2)}
+.res a em{font-style:normal;font-size:13px;color:var(--accent-text);margin-top:6px}
+
+/* ---------- Prompts ---------- */
+.prompts{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+@media (max-width:860px){.prompts{grid-template-columns:1fr}}
+.prompt{background:var(--tile);border-radius:24px;padding:26px;display:flex;flex-direction:column;gap:14px}
+.prompt header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.prompt h4{font-size:19px;font-weight:700}
+.prompt .copy{background:var(--bg);color:var(--accent-text);box-shadow:inset 0 0 0 1px var(--line)}
+.prompt .copy:hover{background:var(--bg)}
+.prompt pre{
+  margin:0;font-family:var(--font);font-size:15px;line-height:1.5;white-space:pre-wrap;color:var(--text);
+  background:var(--bg);border-radius:14px;padding:16px 18px;letter-spacing:-.01em;
+}
+.prompt pre .fill{color:var(--accent-text)}
+
+/* ---------- Summary + footer ---------- */
+.summary{list-style:none;padding:0;margin:0;display:grid;gap:0;border-top:1px solid var(--line)}
+.summary li{display:grid;grid-template-columns:48px 1fr;gap:12px;padding-block:20px;border-bottom:1px solid var(--line);font-size:clamp(19px,2.2vw,24px);font-weight:600;letter-spacing:-.02em;line-height:1.3}
+.summary li span{color:var(--text-2);font-variant-numeric:tabular-nums}
+footer{padding-block:28px 40px;font-size:12px;color:var(--text-2);border-top:1px solid var(--line)}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.toast{
+  position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+  background:var(--text);color:var(--bg);padding:10px 18px;border-radius:980px;font-size:14px;font-weight:500;z-index:60;
+}
+</style>
+</head>
+<body>
+<nav class="nav" aria-label="Secciones">
+  <div class="wrap">
+    <a class="brand" href="#inicio">Taller de Juegos</a>
+    <div class="nav-links">
+      <a href="#plataforma">Plataforma</a>
+      <a href="#creditos">Créditos</a>
+      <a href="#primer-juego">Tu primer juego</a>
+      <a href="#codigo">El código</a>
+      <a href="#publicar">Publicar</a>
+      <a href="#roblox">Roblox</a>
+      <a href="#plantillas">Plantillas</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="inicio">
+  <div class="wrap">
+    <p class="eyebrow">Hacer juegos con Claude</p>
+    <h1>Tus ideas.<br><span>Ahora, jugables.</span></h1>
+    <p class="lead">No necesitas saber programar ni dibujar. Tú pones las ideas y pruebas el juego. Claude escribe el código. Aquí aprendes a hacerlo bien y sin quemar tus créditos.</p>
+    <div class="hero-cta">
+      <a class="btn" href="#primer-juego">Empezar tu primer juego</a>
+      <a class="btn ghost" href="#creditos">Ahorrar créditos</a>
+    </div>
+
+    <div class="stage" id="stage" tabindex="0" aria-label="Minijuego: salta los pinchos">
+      <canvas id="demo"></canvas>
+      <div class="hud" aria-live="off"><span>PUNTOS <b id="score">0000</b></span><span>RÉCORD <b id="best">0000</b></span></div>
+      <div class="overlay" id="overlay">
+        <p class="result" id="result" hidden></p>
+        <button class="btn play" id="play" type="button">Jugar</button>
+        <small id="hint">Espacio, flecha arriba o toque para saltar. Mantén pulsado para saltar más alto.</small>
+      </div>
+    </div>
+    <p class="stage-caption">Este minijuego es una página web normal. En la sección <a href="#codigo">El código</a> tienes una versión de 80 líneas para hacer el tuyo.</p>
+  </div>
+</section>
+
+<!-- ============ PLATAFORMA ============ -->
+<section class="alt" id="plataforma">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Dónde hacer tus juegos</p>
+      <h2 class="h2">Web para empezar.<br>Roblox para dar el salto.</h2>
+      <p class="lead">Lo que importa es <strong>cuánto trabajo puede hacer Claude por ti</strong> en cada sitio. Cuanto más haga él, menos mensajes necesitas y menos créditos gastas.</p>
+    </div>
+
+    <div class="compare">
+      <article class="plat pick">
+        <span class="tag">Recomendado para empezar</span>
+        <h3>Juegos web 2D</h3>
+        <p class="sub">HTML y JavaScript. Se juegan en el navegador.</p>
+        <ul class="rows">
+          <li><span>Claude escribe el juego</span><span><i class="g"></i>Entero</span></li>
+          <li><span>Claude lo prueba</span><span><i class="g"></i>Sí, en un navegador</span></li>
+          <li><span>Gasto de créditos</span><span><i class="g"></i>Bajo</span></li>
+          <li><span>Público</span><span><i class="m"></i>El que consigas</span></li>
+          <li><span>Multijugador</span><span><i class="b"></i>Difícil</span></li>
+          <li><span>Ganar dinero</span><span><i class="m"></i>Posible (itch.io)</span></li>
+        </ul>
+        <p class="verdict"><b>Para probar ideas rápido.</b> En una o dos sesiones sabes si tu idea es divertida y tienes un enlace para pasárselo a tus amigos.</p>
+      </article>
+
+      <article class="plat">
+        <span class="tag">Para dar el salto</span>
+        <h3>Roblox Studio</h3>
+        <p class="sub">Scripts en Luau. Juegos 3D con público enorme.</p>
+        <ul class="rows">
+          <li><span>Claude escribe el juego</span><span><i class="m"></i>Los scripts</span></li>
+          <li><span>Claude lo prueba</span><span><i class="b"></i>No, lo pruebas tú</span></li>
+          <li><span>Gasto de créditos</span><span><i class="m"></i>Medio</span></li>
+          <li><span>Público</span><span><i class="g"></i>Enorme</span></li>
+          <li><span>Multijugador</span><span><i class="g"></i>Viene hecho</span></li>
+          <li><span>Ganar dinero</span><span><i class="g"></i>Sí (Robux)</span></li>
+        </ul>
+        <p class="verdict"><b>Para las ideas que ya funcionan.</b> Sobre todo si son multijugador o en 3D. Tú montas el mapa y pegas los scripts.</p>
+      </article>
+
+      <article class="plat">
+        <span class="tag">No para proyectos nuevos</span>
+        <h3>Scratch</h3>
+        <p class="sub">Bloques visuales. Pensado para aprender.</p>
+        <ul class="rows">
+          <li><span>Claude escribe el juego</span><span><i class="b"></i>Con mucho esfuerzo</span></li>
+          <li><span>Claude lo prueba</span><span><i class="b"></i>Casi no</span></li>
+          <li><span>Gasto de créditos</span><span><i class="b"></i>Alto</span></li>
+          <li><span>Público</span><span><i class="m"></i>Comunidad Scratch</span></li>
+          <li><span>Multijugador</span><span><i class="b"></i>No</span></li>
+          <li><span>Ganar dinero</span><span><i class="b"></i>No</span></li>
+        </ul>
+        <p class="verdict"><b>Los bloques no están hechos para una IA.</b> Cada cambio obliga a trabajar con un archivo enorme.</p>
+      </article>
+    </div>
+
+    <div class="callout">
+      <div class="stats">
+        <div class="num">42<small>sprites</small></div>
+        <div class="num">812<small>disfraces</small></div>
+        <div class="num">6.130<small>bloques</small></div>
+        <div class="num">1,4 MB<small>de código</small></div>
+      </div>
+      <p><b>Soul Keznit 2 ya es un proyecto serio.</b> Pero con ese tamaño, pedir cualquier cambio en Scratch sale caro. Si quieres seguir con él, lo mejor es rehacerlo como juego web y aprovechar tus dibujos.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CREDITOS ============ -->
+<section id="creditos">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Ahorra créditos</p>
+      <h2 class="h2">Cada mensaje relee<br>toda la conversación.</h2>
+      <p class="lead">Esto es lo más importante de toda la página. Claude no recuerda la conversación por su cuenta: <strong>con cada mensaje vuelve a leerla entera.</strong> Por eso, cuanto más larga es la conversación, más cuesta cada mensaje nuevo.</p>
+    </div>
+
+    <div class="two">
+      <div class="panel">
+        <h3>Lo que lee Claude en cada mensaje</h3>
+        <div class="meter" id="meter" aria-label="Cuadrados que representan los mensajes que Claude relee"></div>
+        <div class="meter-note">
+          <span><i style="background:var(--accent)"></i>Mensajes anteriores que vuelve a leer</span>
+          <span><i style="background:var(--text)"></i>Tu mensaje nuevo</span>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>La solución</h3>
+        <p><b>Una conversación para cada tarea.</b> "Añadir el doble salto" es una conversación. "Hacer el menú" es otra.</p>
+        <p>Si empiezas de cero, el primer mensaje de la conversación nueva cuesta como el <b>mensaje 1</b>, no como el 40.</p>
+        <p>Para que Claude no pierda el hilo entre conversaciones, deja por escrito el estado del juego en <span class="inline">PROGRESO.md</span>. Lo explicamos en el <a href="#primer-juego">paso 4</a>.</p>
+        <p>En la terminal: <kbd>/clear</kbd> empieza de cero y <kbd>/compact</kbd> resume la conversación. Tu gasto está en <b>claude.ai → Ajustes → Uso</b>, o con <kbd>/usage</kbd>.</p>
+      </div>
+    </div>
+
+    <div class="bento">
+      <article class="tile wide">
+        <h4>Piensa la idea antes de abrir el chat.</h4>
+        <p>Pensar es gratis, pero pensar dentro del chat gasta créditos. Rellena la <a href="#primer-juego">ficha de la idea</a> en el móvil o en un papel, y después pégala entera en tu primer mensaje.</p>
+      </article>
+      <article class="tile">
+        <h4>Junta los cambios.</h4>
+        <p>Un mensaje con 4 cambios en lista gasta mucho menos que 4 mensajes sueltos.</p>
+      </article>
+      <article class="tile">
+        <h4>Sé concreto.</h4>
+        <p>Si Claude tiene que adivinar lo que quieres, lo acabas pagando rehaciendo cosas.</p>
+        <div class="ex">
+          <div class="bad">"que el salto se sienta mejor"</div>
+          <div class="good">"que salte un 20 % más alto y caiga más rápido"</div>
+        </div>
+      </article>
+      <article class="tile">
+        <h4>Primero, lo mínimo.</h4>
+        <p>Un cuadrado que se mueve y salta. Luego los enemigos. Al final los gráficos bonitos. Nunca todo el juego de golpe.</p>
+      </article>
+      <article class="tile">
+        <h4>Copia el error exacto.</h4>
+        <p>Pega el texto rojo entero y di <b>qué esperabas</b> y <b>qué pasó</b>. "No funciona" obliga a investigar a ciegas.</p>
+      </article>
+      <article class="tile">
+        <h4>Un CLAUDE.md corto.</h4>
+        <p>Claude lee este archivo al empezar cada sesión. Si ahí está explicado tu proyecto, no tiene que investigarlo cada vez. Déjalo en menos de 40 líneas.</p>
+      </article>
+      <article class="tile wide">
+        <h4>Usa el modelo adecuado para cada cosa.</h4>
+        <p>Para cambios simples, como colores, textos o números, usa un modelo más barato (<b>Sonnet</b> o <b>Haiku</b>). Deja <b>Opus</b> para lo difícil: sistemas nuevos o bugs raros. En la terminal se cambia con <kbd>/model</kbd>, y en la app, con el selector de modelo.</p>
+      </article>
+      <article class="tile">
+        <h4>Pide respuestas cortas.</h4>
+        <p>"No me expliques el código, solo hazlo y dime cómo probarlo." Menos texto escrito, menos gasto.</p>
+      </article>
+      <article class="tile">
+        <h4>Plan antes que código.</h4>
+        <p>Para cosas grandes, pide primero un plan de 8 pasos. Corregir un plan cuesta poco. Rehacer código cuesta mucho.</p>
+      </article>
+      <article class="tile">
+        <h4>Toca tú los números.</h4>
+        <p>Cambiar la gravedad de <span class="inline">0.7</span> a <span class="inline">0.9</span> lo puedes hacer tú en el archivo. Es gratis y aprendes.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRIMER JUEGO ============ -->
+<section class="alt" id="primer-juego">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Tu primer juego web</p>
+      <h2 class="h2">De la idea al enlace,<br>en cinco pasos.</h2>
+      <p class="lead">Este es el orden que gasta menos. Cada paso tiene el mensaje exacto para copiar y pegar.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <span class="n">1</span>
+        <div class="body">
+          <div>
+            <h3>Escribe la ficha de la idea</h3>
+            <p>Antes de hablar con Claude. <b>La parte más importante es la versión mínima</b>: entre 3 y 5 cosas, no más.</p>
+          </div>
+          <div class="code">
+            <div class="code-bar"><span>ficha-de-la-idea.txt</span><button class="copy" type="button" data-copy="ficha">Copiar</button></div>
+            <pre class="wrapit" id="ficha">NOMBRE:
+PLATAFORMA: web 2D
+EN UNA FRASE: (ej: plataformas oscuro donde eres un alma que escapa)
+MECÁNICA PRINCIPAL: (lo que haces el 90 % del tiempo: saltar, disparar...)
+CONTROLES: (ej: flechas para moverte, espacio para saltar, shift para dash)
+CÓMO SE GANA:
+CÓMO SE PIERDE:
+VERSIÓN MÍNIMA (lo primero que quiero ver funcionando):
+  -
+  -
+  -
+LO QUE VIENE DESPUÉS (no hacer todavía):
+  -
+ESTILO VISUAL: (ej: pixel art oscuro, formas simples de colores)</pre>
+          </div>
+        </div>
+      </li>
+
+      <li class="step">
+        <span class="n">2</span>
+        <div class="body">
+          <div>
+            <h3>Pide solo la versión mínima</h3>
+            <p>Con formas de colores en vez de dibujos. Si el juego es divertido con cuadrados, lo será con gráficos bonitos. Si no lo es, te has ahorrado los dibujos.</p>
+          </div>
+          <div class="code">
+            <div class="code-bar"><span>mensaje para Claude</span><button class="copy" type="button" data-copy="p-start">Copiar</button></div>
+            <pre class="wrapit" id="p-start">Quiero hacer este juego web 2D con HTML y JavaScript. Aquí va la ficha:
+[pega la ficha]
+
+Haz SOLO la versión mínima, con formas simples de colores.
+Crea también CLAUDE.md (corto) y PROGRESO.md.
+Pruébalo tú en el navegador y, cuando funcione, haz commit y push.
+No me expliques el código.</pre>
+          </div>
+        </div>
+      </li>
+
+      <li class="step">
+        <span class="n">3</span>
+        <div class="body">
+          <div>
+            <h3>Juega y apunta los cambios</h3>
+            <p>Juega 5 minutos y apunta todo lo que cambiarías. Después <b>mándalo todo en un solo mensaje</b>, con números concretos.</p>
+          </div>
+          <div class="code">
+            <div class="code-bar"><span>mensaje para Claude</span><button class="copy" type="button" data-copy="p-batch">Copiar</button></div>
+            <pre class="wrapit" id="p-batch">Haz estos cambios, sin explicaciones:
+1. Jugador un 15 % más rápido.
+2. Pinchos de color rojo.
+3. Al morir, reiniciar el nivel en 1 segundo en vez de 3.
+4. Contador de muertes arriba a la izquierda.</pre>
+          </div>
+        </div>
+      </li>
+
+      <li class="step">
+        <span class="n">4</span>
+        <div class="body">
+          <div>
+            <h3>Guarda antes de cerrar</h3>
+            <p>Al terminar cada sesión, pide que apunte en qué punto está el juego y que lo suba. <b>Si la sesión se cierra sin push, pierdes el trabajo.</b> La siguiente conversación empieza leyendo <span class="inline">PROGRESO.md</span> y no tiene que investigar nada.</p>
+          </div>
+          <div class="code">
+            <div class="code-bar"><span>mensaje para Claude</span><button class="copy" type="button" data-copy="p-save">Copiar</button></div>
+            <pre class="wrapit" id="p-save">Actualiza PROGRESO.md con lo que hemos hecho y lo siguiente que falta. Luego haz commit y push.</pre>
+          </div>
+        </div>
+      </li>
+
+      <li class="step">
+        <span class="n">5</span>
+        <div class="body">
+          <div>
+            <h3>Publícalo</h3>
+            <p>Súbelo gratis a Cloudflare Pages y tendrás un enlace como <span class="inline">tu-juego.pages.dev</span> para pasárselo a quien quieras. Lo tienes paso a paso en <a href="#publicar">Publicar</a>.</p>
+          </div>
+        </div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============ CODIGO ============ -->
+<section id="codigo">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">El código</p>
+      <h2 class="h2">Todo juego es un bucle<br>que se repite 60 veces por segundo.</h2>
+      <p class="lead">No hace falta que programes, pero entender esto te ayuda a <strong>pedir las cosas mejor</strong> y a entender lo que hace Claude.</p>
+    </div>
+
+    <div class="loop">
+      <div class="box"><b>Leer controles</b><p>¿Ha pulsado espacio? Entonces el alma salta.</p><code>saltar()</code></div>
+      <div class="box"><b>Actualizar</b><p>Mover cosas, aplicar la gravedad y comprobar si te has chocado con algo.</p><code>actualizar()</code></div>
+      <div class="box"><b>Dibujar</b><p>Borrar la pantalla y pintarlo todo en su nueva posición.</p><code>dibujar()</code></div>
+      <p class="loop-back">y vuelta a empezar, unas 60 veces por segundo</p>
+    </div>
+
+    <div class="two" style="align-items:start">
+      <div class="code tall">
+        <div class="code-bar"><span>index.html</span><button class="copy" type="button" data-copy="src-view">Copiar</button></div>
+        <pre id="src-view"></pre>
+      </div>
+      <div class="panel">
+        <h3>Pruébalo en tu ordenador</h3>
+        <ol class="olist">
+          <li><span>Pulsa <b>Copiar</b> en el código.</span></li>
+          <li><span>Abre el Bloc de notas o, mejor, <a href="https://code.visualstudio.com" target="_blank" rel="noopener">Visual Studio Code</a> (gratis).</span></li>
+          <li><span>Pega el código y guárdalo como <code>index.html</code>.</span></li>
+          <li><span>Haz doble clic en el archivo. Se abre en el navegador y ya puedes jugar.</span></li>
+        </ol>
+        <p class="note" style="margin-top:18px">El minijuego de arriba funciona igual, pero con algunos efectos más: el brillo, la estela, las partículas y el salto variable.</p>
+      </div>
+    </div>
+
+    <h3 style="font-size:24px;font-weight:700;margin-top:48px">Cambia un número y mira qué pasa</h3>
+    <p style="color:var(--text-2);margin-top:6px">Así aprendes y no gastas créditos. Guarda el archivo y recarga el navegador después de cada cambio.</p>
+    <div class="tweaks">
+      <div class="tweak"><b>Saltar más alto</b>Cambia <code>alma.vy = -13</code> por <code>-16</code>.</div>
+      <div class="tweak"><b>Gravedad de la Luna</b>Cambia <code>alma.vy += 0.7</code> por <code>0.35</code>.</div>
+      <div class="tweak"><b>Más difícil</b>Cambia <code>p.x -= 6</code> por <code>9</code>. Los pinchos van más rápido.</div>
+      <div class="tweak"><b>Otro color</b>Cambia <code>"#ff453a"</code> por <code>"#30d158"</code> y tendrás pinchos verdes.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PUBLICAR ============ -->
+<section class="alt" id="publicar">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Publicar en Cloudflare</p>
+      <h2 class="h2">Tu juego en internet.<br>Gratis y en dos minutos.</h2>
+      <p class="lead">Cloudflare Pages aloja páginas web gratis. Un juego web es una página web, así que sirve igual. <strong>Necesitas tu propia cuenta</strong>, así que este paso lo das tú.</p>
+    </div>
+
+    <div class="pub">
+      <article class="card">
+        <span class="tag">La forma más fácil</span>
+        <h3>Arrastrar la carpeta</h3>
+        <p>Perfecto para la primera vez. Subes la carpeta del juego a mano.</p>
+        <ol class="olist">
+          <li><span>Crea una cuenta gratis en <a href="https://dash.cloudflare.com/sign-up" target="_blank" rel="noopener">dash.cloudflare.com</a>.</span></li>
+          <li><span>En el menú de la izquierda, entra en <b>Workers &amp; Pages</b> y pulsa <b>Create</b>.</span></li>
+          <li><span>Elige <b>Pages</b> y la opción de subir archivos. Suele llamarse <b>Upload assets</b> o <b>Drag and drop your files</b>.</span></li>
+          <li><span>Pon un nombre al proyecto. Será tu dirección: <code>soul-keznit.pages.dev</code>.</span></li>
+          <li><span>Arrastra la carpeta del juego, con <code>index.html</code> dentro, y pulsa <b>Deploy site</b>.</span></li>
+          <li><span>Para actualizarlo, entra en el proyecto, pulsa <b>Create new deployment</b> y vuelve a subir la carpeta.</span></li>
+        </ol>
+        <p class="note">Cloudflare cambia los nombres de los botones de vez en cuando. Si alguno no coincide, busca el que se parezca más.</p>
+      </article>
+
+      <article class="card">
+        <span class="tag">La mejor con Claude</span>
+        <h3>Conectar con GitHub</h3>
+        <p>Cada vez que Claude haga push, tu juego se actualiza solo en internet. No tienes que volver a subir nada.</p>
+        <ol class="olist">
+          <li><span>En <b>Workers &amp; Pages</b> pulsa <b>Create</b>, elige <b>Pages</b> y después <b>Connect to Git</b>.</span></li>
+          <li><span>Conecta tu cuenta de GitHub y elige el repositorio del juego.</span></li>
+          <li><span>En <b>Framework preset</b> elige <b>None</b> y deja vacío el <b>Build command</b>.</span></li>
+          <li><span>En <b>Build output directory</b> pon la carpeta donde está <code>index.html</code>. Por ejemplo: <code>sitio</code>.</span></li>
+          <li><span>Pulsa <b>Save and Deploy</b>. A partir de ahora, cada push publica una versión nueva.</span></li>
+        </ol>
+        <div class="code">
+          <div class="code-bar"><span>mensaje para Claude</span><button class="copy" type="button" data-copy="p-cf">Copiar</button></div>
+          <pre class="wrapit" id="p-cf">Prepara el juego para Cloudflare Pages: todo lo necesario dentro de la carpeta /sitio, con index.html en la raíz de esa carpeta y rutas relativas. Haz commit y push.</pre>
+        </div>
+      </article>
+    </div>
+
+    <div class="pub-extra">
+      <div class="mini">
+        <h4>Practica con esta página</h4>
+        <p>Esta misma página está en tu repositorio, en <span class="inline">sitio/index.html</span>. Súbela a Cloudflare como primera prueba antes de subir un juego.</p>
+      </div>
+      <div class="mini">
+        <h4>itch.io para gamers</h4>
+        <p>Comprime la carpeta en un .zip, súbela a <a href="https://itch.io" target="_blank" rel="noopener">itch.io</a> y marca <b>"This file will be played in the browser"</b>. Ahí hay jugadores buscando juegos indie.</p>
+      </div>
+      <div class="mini">
+        <h4>Nunca subas contraseñas</h4>
+        <p>Todo lo que está en la carpeta publicada lo puede ver cualquiera. No metas en ella claves, contraseñas ni datos personales.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ROBLOX ============ -->
+<section id="roblox">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Si trabajas en Roblox</p>
+      <h2 class="h2">Tú eres los ojos<br>y las manos de Claude.</h2>
+      <p class="lead">Claude no puede ver ni tocar tu Roblox Studio. Escribe los scripts, tú los colocas y le cuentas qué pasa. <strong>Para gastar poco, pregunta siempre dónde va cada script.</strong></p>
+    </div>
+
+    <div class="where">
+      <article class="tile">
+        <span class="kind">Script</span>
+        <span class="path">ServerScriptService</span>
+        <p>Lo que decide el servidor: puntos, daño, guardar datos. Los jugadores no pueden hacer trampas con esto.</p>
+      </article>
+      <article class="tile">
+        <span class="kind">LocalScript</span>
+        <span class="path">StarterPlayer → StarterPlayerScripts</span>
+        <p>Lo que pasa en la pantalla de cada jugador: controles, cámara e interfaz.</p>
+      </article>
+      <article class="tile">
+        <span class="kind">ModuleScript</span>
+        <span class="path">ReplicatedStorage</span>
+        <p>Código compartido que usan varios scripts a la vez, como una tabla con los datos de las armas.</p>
+      </article>
+    </div>
+
+    <ul class="checks">
+      <li><b>Abre la ventana Output</b><p>Menú <b>View → Output</b>. Cuando algo falle, copia el texto rojo entero y pégaselo a Claude.</p></li>
+      <li><b>Mismos nombres</b><p>Si el script busca <span class="inline">workspace.Puerta</span>, la pieza tiene que llamarse exactamente <span class="inline">Puerta</span>, con mayúscula incluida.</p></li>
+      <li class="warn"><b>Cuidado con la Toolbox</b><p>Algunos modelos gratis traen scripts escondidos (virus o <i>backdoors</i>). Antes de usar uno, mira si tiene scripts dentro y bórralos si no sabes para qué sirven.</p></li>
+      <li><b>Más adelante: conecta Claude a Studio</b><p>Con Claude Code instalado en tu PC puedes usar el conector oficial de Roblox para Studio (MCP) o la herramienta Rojo. Así Claude ve y cambia el juego directamente, sin copiar y pegar.</p></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ RECURSOS ============ -->
+<section class="alt" id="recursos">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Gráficos y sonidos</p>
+      <h2 class="h2">No sabes dibujar.<br>Tampoco hace falta.</h2>
+      <p class="lead">Pedirle a Claude que dibuje todo gasta mucho y el resultado suele ser simple. Descarga un pack gratis, mételo en la carpeta <span class="inline">assets/</span> y dile: <strong>"usa los sprites de assets/"</strong>.</p>
+    </div>
+    <div class="res">
+      <a href="https://kenney.nl/assets" target="_blank" rel="noopener"><b>Kenney</b><span>Miles de gráficos y sonidos gratis. Licencia CC0: los puedes usar en cualquier juego.</span><em>kenney.nl</em></a>
+      <a href="https://opengameart.org" target="_blank" rel="noopener"><b>OpenGameArt</b><span>Sprites, fondos y música hechos por la comunidad. Mira la licencia de cada uno.</span><em>opengameart.org</em></a>
+      <a href="https://itch.io/game-assets/free" target="_blank" rel="noopener"><b>itch.io assets</b><span>Packs gratis de pixel art, muy buenos para plataformas.</span><em>itch.io/game-assets</em></a>
+      <a href="https://sfxr.me" target="_blank" rel="noopener"><b>sfxr</b><span>Crea efectos de sonido retro con un clic: saltos, monedas, explosiones.</span><em>sfxr.me</em></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PLANTILLAS ============ -->
+<section id="plantillas">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Plantillas</p>
+      <h2 class="h2">Mensajes que funcionan.</h2>
+      <p class="lead">Cópialos y cambia lo que está <span style="color:var(--accent-text)">entre corchetes</span>.</p>
+    </div>
+    <div class="prompts">
+      <article class="prompt">
+        <header><h4>Añadir una función</h4><button class="copy" type="button" data-copy="t1">Copiar</button></header>
+<pre id="t1">Lee PROGRESO.md. Quiero añadir: <span class="fill">[cosa concreta]</span>.
+Detalles: <span class="fill">[números y comportamiento exacto]</span>.
+No toques nada más.</pre>
+      </article>
+      <article class="prompt">
+        <header><h4>Arreglar un bug</h4><button class="copy" type="button" data-copy="t2">Copiar</button></header>
+<pre id="t2">Bug: cuando <span class="fill">[lo que hago]</span>, pasa <span class="fill">[lo que pasa]</span>, pero debería <span class="fill">[lo que espero]</span>.
+Error exacto: <span class="fill">[pega el texto rojo]</span>
+Arréglalo con el cambio más pequeño posible.</pre>
+      </article>
+      <article class="prompt">
+        <header><h4>Algo grande</h4><button class="copy" type="button" data-copy="t3">Copiar</button></header>
+<pre id="t3">Antes de programar, dame un plan corto (máximo 8 pasos) para hacer <span class="fill">[inventario / jefe final / tienda]</span>.
+No escribas código todavía.</pre>
+      </article>
+      <article class="prompt">
+        <header><h4>Script de Roblox</h4><button class="copy" type="button" data-copy="t4">Copiar</button></header>
+<pre id="t4">Hazme un script de Roblox para <span class="fill">[lo que quiero]</span>.
+Dime exactamente dónde lo pego (servicio y tipo de script) y cómo tienen que llamarse las piezas del mapa.
+No me expliques el código.</pre>
+      </article>
+      <article class="prompt">
+        <header><h4>Usar gráficos descargados</h4><button class="copy" type="button" data-copy="t5">Copiar</button></header>
+<pre id="t5">He metido un pack de sprites en la carpeta assets/.
+Cambia las formas de colores por esos sprites: <span class="fill">[jugador = ..., enemigo = ..., suelo = ...]</span>.
+No cambies nada de la jugabilidad.</pre>
+      </article>
+      <article class="prompt">
+        <header><h4>Cerrar la sesión</h4><button class="copy" type="button" data-copy="t6">Copiar</button></header>
+<pre id="t6">Actualiza PROGRESO.md con lo que hemos hecho y lo siguiente que falta. Luego haz commit y push.</pre>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RESUMEN ============ -->
+<section class="alt">
+  <div class="wrap narrow">
+    <div class="head">
+      <p class="eyebrow">En resumen</p>
+      <h2 class="h2">Si solo recuerdas cinco cosas.</h2>
+    </div>
+    <ul class="summary">
+      <li><span>1</span>La idea, escrita antes de abrir Claude.</li>
+      <li><span>2</span>Primero la versión mínima, con formas simples.</li>
+      <li><span>3</span>Una conversación por tarea, con los cambios juntos y concretos.</li>
+      <li><span>4</span>PROGRESO.md al día, y commit y push antes de cerrar.</li>
+      <li><span>5</span>Web para probar ideas. Roblox para las que merezcan público.</li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Taller de Juegos · Hecho con Claude para Soul Keznit</span>
+    <span>Septiembre de 2026</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<!-- Código fuente del juego de ejemplo (se muestra en la sección "El código") -->
+<textarea id="src" hidden><!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Mi primer juego</title>
+<style>
+  body { margin: 0; background: #111; display: flex; justify-content: center; align-items: center; height: 100vh; }
+  canvas { background: #000; border-radius: 12px; max-width: 100%; }
+</style>
+</head>
+<body>
+<canvas id="juego" width="720" height="300"></canvas>
+<script>
+const canvas = document.getElementById("juego");
+const ctx = canvas.getContext("2d");
+const SUELO = 250;
+
+// 1. ESTADO: todo lo que el juego recuerda
+let alma = { x: 100, y: SUELO, vy: 0 };
+let pinchos = [];
+let espera = 60;
+let puntos = 0;
+let vivo = true;
+
+// 2. CONTROLES: qué pasa cuando pulsas algo
+function saltar() {
+  if (!vivo) { reiniciar(); return; }
+  if (alma.y >= SUELO) alma.vy = -13;
+}
+document.addEventListener("keydown", e => {
+  if (e.code === "Space") { e.preventDefault(); saltar(); }
+});
+canvas.addEventListener("pointerdown", saltar);
+
+function reiniciar() {
+  alma = { x: 100, y: SUELO, vy: 0 };
+  pinchos = []; espera = 60; puntos = 0; vivo = true;
+}
+
+// 3. ACTUALIZAR: mover cosas y aplicar las reglas
+function actualizar() {
+  if (!vivo) return;
+  alma.vy += 0.7;                  // gravedad
+  alma.y += alma.vy;
+  if (alma.y > SUELO) { alma.y = SUELO; alma.vy = 0; }
+
+  espera--;                        // crear un pincho nuevo de vez en cuando
+  if (espera <= 0) {
+    pinchos.push({ x: canvas.width + 20 });
+    espera = 50 + Math.random() * 70;
+  }
+  for (const p of pinchos) p.x -= 6;
+  pinchos = pinchos.filter(p => p.x > -20);
+
+  for (const p of pinchos) {       // ¿choque?
+    if (Math.abs(p.x - alma.x) < 20 && alma.y > SUELO - 20) vivo = false;
+  }
+  puntos++;
+}
+
+// 4. DIBUJAR: pintar todo en su sitio
+function dibujar() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#333";
+  ctx.fillRect(0, SUELO, canvas.width, 2);
+
+  ctx.fillStyle = "#ffffff";       // el alma
+  ctx.beginPath();
+  ctx.arc(alma.x, alma.y - 14, 14, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#ff453a";       // los pinchos
+  for (const p of pinchos) {
+    ctx.beginPath();
+    ctx.moveTo(p.x - 12, SUELO);
+    ctx.lineTo(p.x, SUELO - 24);
+    ctx.lineTo(p.x + 12, SUELO);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "20px sans-serif";
+  ctx.fillText("Puntos: " + Math.floor(puntos / 6), 20, 34);
+  if (!vivo) ctx.fillText("Has perdido. Pulsa espacio para reiniciar", 180, 140);
+}
+
+// 5. EL BUCLE: repetir sin parar
+function bucle() {
+  actualizar();
+  dibujar();
+  requestAnimationFrame(bucle);
+}
+bucle();
+</script>
+</body>
+</html></textarea>
+
+<script>
+(function(){
+  /* ---------- Código fuente con comentarios resaltados ---------- */
+  var src = document.getElementById('src').value;
+  var esc = function(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+  var html = esc(src)
+    .replace(/(\/\/[^\n]*)/g,'<span class="c">$1</span>')
+    .replace(/\b(function|const|let|for|if|return|of)\b(?![^<]*<\/span>)/g,'<span class="k">$1</span>');
+  document.getElementById('src-view').innerHTML = html;
+
+  /* ---------- Botones de copiar ---------- */
+  var toast = document.getElementById('toast'), tt;
+  function showToast(msg){
+    toast.textContent = msg; toast.hidden = false;
+    clearTimeout(tt); tt = setTimeout(function(){toast.hidden = true;}, 1800);
+  }
+  function selectText(el){
+    try{var r=document.createRange();r.selectNodeContents(el);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}catch(e){}
+  }
+  document.querySelectorAll('[data-copy]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var id = btn.getAttribute('data-copy');
+      var el = document.getElementById(id);
+      var text = id === 'src-view' ? src : el.textContent;
+      var done = function(){ btn.textContent = 'Copiado'; showToast('Copiado. Ya puedes pegarlo.'); setTimeout(function(){btn.textContent='Copiar';},1600); };
+      var fail = function(){ selectText(el); showToast('Texto seleccionado. Cópialo con Ctrl+C o Cmd+C.'); };
+      try{
+        if (navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(text).then(done, fail);
+        } else { fail(); }
+      }catch(e){ fail(); }
+    });
+  });
+
+  /* ---------- Contador de créditos ---------- */
+  var meter = document.getElementById('meter');
+  [1,5,10,20,40].forEach(function(n){
+    var row = document.createElement('div'); row.className = 'meter-row';
+    var lbl = document.createElement('span'); lbl.className = 'lbl';
+    lbl.innerHTML = 'Mensaje <b>' + n + '</b>';
+    var cells = document.createElement('div'); cells.className = 'cells';
+    for (var i = 0; i < n; i++){
+      var c = document.createElement('span');
+      if (i === n - 1) c.className = 'new';
+      cells.appendChild(c);
+    }
+    row.appendChild(lbl); row.appendChild(cells); meter.appendChild(row);
+  });
+})();
+
+/* ================= Minijuego de la portada ================= */
+(function(){
+  var stage = document.getElementById('stage');
+  var cv = document.getElementById('demo');
+  var ctx = cv.getContext('2d');
+  var overlay = document.getElementById('overlay');
+  var playBtn = document.getElementById('play');
+  var resultEl = document.getElementById('result');
+  var hintEl = document.getElementById('hint');
+  var scoreEl = document.getElementById('score');
+  var bestEl = document.getElementById('best');
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var VH = 300, GROUND = 238, R = 13;
+  var W = 0, H = 0, scale = 1, VW = 680;
+  var mode = 'idle';
+  var soul, spikes, parts, trail, embers, wait, score, speed, held, buffer, t = 0, shake = 0;
+  var best = 0;
+  try { best = parseInt(localStorage.getItem('taller-best') || '0', 10) || 0; } catch(e) {}
+  var pad = function(n){ n = Math.floor(n); return ('0000' + n).slice(-4); };
+  bestEl.textContent = pad(best);
+
+  function reset(){
+    soul = {x: 110, y: GROUND, vy: 0};
+    spikes = []; parts = []; trail = [];
+    wait = 70; score = 0; speed = 6; held = false; buffer = 0; shake = 0;
+    scoreEl.textContent = pad(0);
+  }
+  function makeEmbers(){
+    embers = [];
+    for (var i = 0; i < 46; i++){
+      embers.push({x: Math.random()*1400, y: Math.random()*GROUND, z: .2 + Math.random()*.8, p: Math.random()*6.28});
+    }
+  }
+  function resize(){
+    var r = cv.getBoundingClientRect();
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = r.width; H = r.height;
+    cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr);
+    scale = H / VH; VW = W / scale;
+    ctx.setTransform(dpr*scale, 0, 0, dpr*scale, 0, 0);
+    draw();
+  }
+
+  function onGround(){ return soul.y >= GROUND - .5; }
+  function press(){
+    if (mode !== 'play') return;
+    held = true;
+    if (onGround()) jump(); else buffer = 7;
+  }
+  function release(){
+    held = false;
+    if (mode === 'play' && soul.vy < -7.5) soul.vy = -7.5;
+  }
+  function jump(){ soul.vy = -12.6; buffer = 0; }
+
+  function start(){
+    reset(); mode = 'play';
+    overlay.hidden = true;
+    stage.focus({preventScroll:true});
+  }
+  function die(){
+    mode = 'dead'; shake = reduce ? 0 : 10;
+    for (var i = 0; i < 38; i++){
+      var a = Math.random()*6.283, s = 1 + Math.random()*5;
+      parts.push({x: soul.x, y: soul.y - R, vx: Math.cos(a)*s, vy: Math.sin(a)*s - 2, life: 1});
+    }
+    var pts = Math.floor(score);
+    if (pts > best){ best = pts; bestEl.textContent = pad(best); try{ localStorage.setItem('taller-best', String(best)); }catch(e){} }
+    setTimeout(function(){
+      if (mode !== 'dead') return;
+      resultEl.textContent = pts + ' puntos' + (pts >= best && pts > 0 ? ' · ¡Nuevo récord!' : '');
+      resultEl.hidden = false;
+      playBtn.textContent = 'Otra vez';
+      hintEl.textContent = 'Pulsa espacio o toca para reintentar.';
+      overlay.hidden = false;
+    }, 550);
+  }
+
+  function update(dt){
+    t += dt;
+    for (var i = 0; i < embers.length; i++){
+      var e = embers[i];
+      e.x -= (mode === 'play' ? speed*.18 : .25) * e.z * dt;
+      if (e.x < -10) { e.x = VW + 10; e.y = Math.random()*GROUND; }
+    }
+    for (var j = parts.length - 1; j >= 0; j--){
+      var p = parts[j];
+      p.vy += .25*dt; p.x += p.vx*dt; p.y += p.vy*dt; p.life -= .022*dt;
+      if (p.y > GROUND) { p.y = GROUND; p.vy *= -.4; p.vx *= .8; }
+      if (p.life <= 0) parts.splice(j, 1);
+    }
+    if (shake > 0) shake = Math.max(0, shake - dt);
+    if (mode !== 'play') return;
+
+    soul.vy += .7*dt; soul.y += soul.vy*dt;
+    if (soul.y > GROUND){ soul.y = GROUND; soul.vy = 0; if (buffer > 0) jump(); }
+    if (buffer > 0) buffer -= dt;
+
+    speed = Math.min(10.5, 6 + score*.012);
+    wait -= dt;
+    if (wait <= 0){
+      spikes.push({x: VW + 30});
+      if (Math.random() < .28) spikes.push({x: VW + 54});
+      wait = 48 + Math.random()*62;
+    }
+    for (var k = spikes.length - 1; k >= 0; k--){
+      spikes[k].x -= speed*dt;
+      if (spikes[k].x < -40) spikes.splice(k, 1);
+    }
+    trail.push({x: soul.x, y: soul.y - R});
+    if (trail.length > 14) trail.shift();
+    for (var q = 0; q < trail.length; q++) trail[q].x -= speed*dt;
+
+    for (var m = 0; m < spikes.length; m++){
+      if (Math.abs(spikes[m].x - soul.x) < 17 && soul.y > GROUND - 19){ die(); break; }
+    }
+    score += dt/6;
+    scoreEl.textContent = pad(score);
+  }
+
+  function draw(){
+    if (!W) return;
+    ctx.save();
+    if (shake > 0) ctx.translate((Math.random()-.5)*shake*.6, (Math.random()-.5)*shake*.6);
+    var g = ctx.createLinearGradient(0, 0, 0, VH);
+    g.addColorStop(0, '#07080c'); g.addColorStop(1, '#0d1320');
+    ctx.fillStyle = g; ctx.fillRect(-20, -20, VW + 40, VH + 40);
+
+    for (var i = 0; i < embers.length; i++){
+      var e = embers[i];
+      var a = .15 + .35*e.z*(.6 + .4*Math.sin(t*.05 + e.p));
+      ctx.fillStyle = 'rgba(120,200,255,' + a.toFixed(3) + ')';
+      ctx.fillRect(e.x, e.y + Math.sin(t*.03 + e.p)*4, 1.6*e.z + .6, 1.6*e.z + .6);
+    }
+
+    var gl = ctx.createLinearGradient(0, 0, VW, 0);
+    gl.addColorStop(0, 'rgba(100,210,255,0)'); gl.addColorStop(.5, 'rgba(100,210,255,.55)'); gl.addColorStop(1, 'rgba(100,210,255,0)');
+    ctx.fillStyle = gl; ctx.fillRect(0, GROUND, VW, 1.5);
+    ctx.fillStyle = 'rgba(100,210,255,.04)'; ctx.fillRect(0, GROUND + 1.5, VW, VH - GROUND);
+
+    for (var s = 0; s < spikes.length; s++){
+      var x = spikes[s].x;
+      ctx.fillStyle = '#ff453a';
+      ctx.shadowColor = 'rgba(255,69,58,.6)'; ctx.shadowBlur = 12;
+      ctx.beginPath(); ctx.moveTo(x - 11, GROUND); ctx.lineTo(x, GROUND - 26); ctx.lineTo(x + 11, GROUND); ctx.closePath(); ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+
+    if (mode !== 'dead'){
+      for (var k = 0; k < trail.length; k++){
+        var tr = trail[k], f = k / trail.length;
+        ctx.fillStyle = 'rgba(100,210,255,' + (f*.28).toFixed(3) + ')';
+        ctx.beginPath(); ctx.arc(tr.x, tr.y, R*f*.9, 0, 6.283); ctx.fill();
+      }
+      var bob = (mode === 'idle' && !reduce) ? Math.sin(t*.06)*5 - 6 : 0;
+      var cx = soul.x, cy = soul.y - R + bob;
+      var halo = ctx.createRadialGradient(cx, cy, 2, cx, cy, R*3.2);
+      halo.addColorStop(0, 'rgba(100,210,255,.55)'); halo.addColorStop(1, 'rgba(100,210,255,0)');
+      ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(cx, cy, R*3.2, 0, 6.283); ctx.fill();
+      var core = ctx.createRadialGradient(cx - 3, cy - 4, 1, cx, cy, R);
+      core.addColorStop(0, '#ffffff'); core.addColorStop(1, '#bfeaff');
+      ctx.fillStyle = core; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 6.283); ctx.fill();
+      ctx.fillStyle = '#0b1a2a';
+      ctx.beginPath(); ctx.arc(cx + 4, cy - 2, 2.1, 0, 6.283); ctx.arc(cx + 10, cy - 2, 2.1, 0, 6.283); ctx.fill();
+    }
+    for (var p = 0; p < parts.length; p++){
+      var pa = parts[p];
+      ctx.fillStyle = 'rgba(191,234,255,' + Math.max(0, pa.life).toFixed(3) + ')';
+      ctx.beginPath(); ctx.arc(pa.x, pa.y, 2.2, 0, 6.283); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  var last = 0, running = false, visible = true;
+  function frame(now){
+    if (!running) return;
+    var dt = last ? Math.min((now - last) / 16.667, 3) : 1;
+    last = now;
+    update(dt); draw();
+    requestAnimationFrame(frame);
+  }
+  function run(){ if (running) return; if (reduce && mode === 'idle') { draw(); return; } running = true; last = 0; requestAnimationFrame(frame); }
+  function stop(){ running = false; }
+
+  playBtn.addEventListener('click', function(e){ e.stopPropagation(); start(); run(); });
+  stage.addEventListener('pointerdown', function(e){
+    if (e.target === playBtn) return;
+    if (mode === 'play'){ e.preventDefault(); press(); }
+    else if (!overlay.hidden){ start(); run(); }
+  });
+  window.addEventListener('pointerup', release);
+  window.addEventListener('pointercancel', release);
+  var jumpKey = function(e){ return e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW'; };
+  window.addEventListener('keydown', function(e){
+    if (!jumpKey(e) || !visible) return;
+    if (mode === 'play'){ e.preventDefault(); if (!e.repeat) press(); }
+    else if (!overlay.hidden && document.activeElement === stage){ e.preventDefault(); start(); run(); }
+  });
+  window.addEventListener('keyup', function(e){ if (jumpKey(e)) release(); });
+
+  if ('IntersectionObserver' in window){
+    new IntersectionObserver(function(entries){
+      visible = entries[0].isIntersecting;
+      if (visible) run(); else stop();
+    }, {threshold: .15}).observe(stage);
+  }
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(stage);
+  else window.addEventListener('resize', resize);
+
+  reset(); makeEmbers(); resize(); run();
+})();
+</script>
+</body>
+</html>
