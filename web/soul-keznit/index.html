@@ -100,6 +100,7 @@
       <p class="tag serif fade-up" style="--delay:.4s">La llegada al abismo.</p>
       <div class="ctas fade-up" style="--delay:.55s">
         <a class="btn" href="#jugar">Jugar ahora</a>
+        <a class="link-arrow" href="#jugar" data-ver-link="orig">Jugar el original de Scratch</a>
         <a class="link-arrow" href="#historia">Leer la historia</a>
       </div>
       <div class="art fade-up" style="--delay:.7s"><img src="/img/sk1r/titulo.jpg" alt="Pantalla de título de Soul Keznit Remake"></div>
@@ -111,7 +112,7 @@
     <div class="wrap">
       <div class="sec-head">
         <h2 id="jugar-t" class="h-lg reveal">Juega aquí.</h2>
-        <p class="lead reveal" data-d="1">Con teclado, mando o pantalla táctil. Tu partida se guarda sola.</p>
+        <p class="lead reveal" data-d="1">Con teclado, mando o pantalla táctil. Tu partida se guarda sola. Cambia a la pestaña del original para comparar los dos.</p>
       </div>
       <div class="tabs reveal" role="tablist" aria-label="Versión">
         <button type="button" role="tab" aria-selected="true" data-ver="remake">Remake</button>
@@ -302,6 +303,9 @@
     player.dataset.src = v.src;
     player.querySelector('.note').textContent = v.note;
     player.querySelectorAll('[data-needs-game]').forEach(b => b.disabled = true);
+  }));
+  document.querySelectorAll('[data-ver-link]').forEach(a => a.addEventListener('click', () => {
+    document.querySelector(`.tabs [data-ver="${a.dataset.verLink}"]`)?.click();
   }));
 })();
 </script>

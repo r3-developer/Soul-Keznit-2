@@ -143,12 +143,14 @@
         }
       }
     }
-    mouse = { x: pt.x, y: pt.y, click: true };
+    mouse = { x: pt.x, y: pt.y, click: true, down: true };
   });
-  const endTouch = (e) => { const k = touches.get(e.pointerId); if (k) { touchHeld.delete(k); touches.delete(e.pointerId); } };
+  const endTouch = (e) => { mouse.down = false; mouse.drag = null; const k = touches.get(e.pointerId); if (k) { touchHeld.delete(k); touches.delete(e.pointerId); } };
   cv.addEventListener('pointerup', endTouch);
+  addEventListener('pointerup', () => { mouse.down = false; mouse.drag = null; });
   cv.addEventListener('pointercancel', endTouch);
   cv.addEventListener('pointermove', (e) => { const pt = toLogical(e); mouse.x = pt.x; mouse.y = pt.y; mouse.moved = true; });
+  cv.addEventListener('wheel', (e) => { mouse.wheel = (mouse.wheel || 0) + Math.sign(e.deltaY); if (scene === optionsScene) e.preventDefault(); }, { passive: false });
 
   // ---------- partículas y efectos ----------
   let parts = [];
@@ -270,9 +272,18 @@
   function runMenu(m, items) {
     let sel = m.sel || 0;
     const n = items.length;
-    if (m._items) items.forEach((it, i) => { if (!it.box && m._items[i]) it.box = m._items[i].box; });
+    if (m._items) items.forEach((it, i) => { if (!it.box && m._items[i]) { it.box = m._items[i].box; it.bar = m._items[i].bar; } });
     if (pressed.has('up')) { do sel = (sel - 1 + n) % n; while (items[sel].disabled); SKA.sfx('move'); }
     if (pressed.has('down')) { do sel = (sel + 1) % n; while (items[sel].disabled); SKA.sfx('move'); }
+    // barras de volumen: pinchar, arrastrar o rueda
+    const inBox = (b) => b && mouse.x > b.x && mouse.x < b.x + b.w && mouse.y > b.y && mouse.y < b.y + b.h;
+    items.forEach((it, i) => {
+      if (!it.set || !it.bar) return;
+      if (mouse.click && inBox(it.bar)) { mouse.drag = it.id; mouse.click = false; }
+      if (mouse.down && mouse.drag === it.id) { sel = i; it.set((mouse.x - it.bar.x - 6) / (it.bar.w - 12)); }
+      if (mouse.wheel && inBox(it.box)) { sel = i; (mouse.wheel < 0 ? it.right : it.left)(); SKA.sfx('move'); }
+    });
+    mouse.wheel = 0;
     // ratón
     if (mouse.moved || mouse.click) {
       items.forEach((it, i) => { if (it.box && !it.disabled && mouse.x > it.box.x && mouse.x < it.box.x + it.box.w && mouse.y > it.box.y && mouse.y < it.box.y + it.box.h) { if (sel !== i && mouse.moved) SKA.sfx('move'); sel = i; if (mouse.click) { m.sel = sel; items[i].act && items[i].act(); SKA.sfx('select'); mouse.click = false; } } });
@@ -284,9 +295,27 @@
     if (it.right && (pressed.has('right'))) { it.right(); SKA.sfx('move'); }
     if (pressed.has('confirm') && it.act) { SKA.sfx('select'); it.act(); }
   }
+  // Etiqueta + barra de volumen que se puede arrastrar con el ratón
+  function drawBar(it, x, y, gap, size, on) {
+    ctx.font = PX(size);
+    const lw = ctx.measureText(it.label).width, bw = 200, bh = 16, tw = lw + 24 + bw;
+    const x0 = x - tw / 2, bx = x0 + lw + 24;
+    it.box = { x: x0 - 20, y: y - gap / 2 + 4, w: tw + 40, h: gap - 8 };
+    it.bar = { x: bx - 6, y: y - gap / 2 + 4, w: bw + 12, h: gap - 8 };
+    if (on) {
+      ctx.fillStyle = '#fff'; ctx.fillRect(x0 - 16, y - size / 2 - 6, tw + 32, size + 12);
+      const bob = Math.sin(clock * 0.15) * 3;
+      ctx.fillStyle = COL.red; ctx.fillRect(x0 - 34 + bob, y - 5, 10, 10);
+    }
+    text(it.label, x0, y + 1, size, on ? '#000' : 'rgba(255,255,255,.75)', 'left');
+    ctx.fillStyle = on ? '#000' : 'rgba(255,255,255,.2)'; ctx.fillRect(bx, y - bh / 2, bw, bh);
+    ctx.fillStyle = on ? COL.red : 'rgba(255,255,255,.75)'; ctx.fillRect(bx + 2, y - bh / 2 + 2, (bw - 4) * it.level, bh - 4);
+    ctx.fillStyle = on ? '#000' : '#fff'; ctx.fillRect(bx + 2 + (bw - 4) * it.level - 3, y - bh / 2 - 4, 6, bh + 8);
+  }
   function drawMenu(m, items, x, y0, gap = 42, size = 26) {
     items.forEach((it, i) => {
       const y = y0 + i * gap, on = i === m.sel;
+      if (it.level !== undefined) { drawBar(it, x, y, gap, size, on); return; }
       const label = it.label + (it.value !== undefined ? '   ' + it.value : '');
       ctx.font = PX(size);
       const w = ctx.measureText(label).width;
@@ -398,12 +427,17 @@
   const optionsScene = {
     enter(from) { this.sel = 0; this.from = from || 'title'; },
     items() {
-      const o = save.opts, pct = (v) => '■'.repeat(Math.round(v * 10)) + '□'.repeat(10 - Math.round(v * 10));
+      const o = save.opts;
       const vol = (k) => (d) => { o[k] = Math.max(0, Math.min(1, Math.round((o[k] + d) * 10) / 10)); SKA.setVolumes(o.music, o.sfx); persist(); };
+      const setVol = (k, f) => (v) => {
+        v = Math.max(0, Math.min(1, Math.round(v * 20) / 20));
+        if (v === o[k]) return;
+        o[k] = v; SKA.setVolumes(o.music, o.sfx); persist(); if (f) f();
+      };
       const tog = (k, f) => () => { o[k] = !o[k]; if (f) f(); persist(); };
       return [
-        { label: ui('music'), value: pct(o.music), left: () => vol('music')(-0.1), right: () => vol('music')(0.1) },
-        { label: ui('sfx'), value: pct(o.sfx), left: () => { vol('sfx')(-0.1); SKA.sfx('jump'); }, right: () => { vol('sfx')(0.1); SKA.sfx('jump'); } },
+        { id: 'music', label: ui('music'), level: o.music, set: setVol('music'), left: () => vol('music')(-0.1), right: () => vol('music')(0.1) },
+        { id: 'sfx', label: ui('sfx'), level: o.sfx, set: setVol('sfx', () => SKA.sfx('jump')), left: () => { vol('sfx')(-0.1); SKA.sfx('jump'); }, right: () => { vol('sfx')(0.1); SKA.sfx('jump'); } },
         { label: ui('track'), value: o.orig ? ui('trackOrig') : ui('trackNew'), left: tog('orig', () => SKA.setOriginal(o.orig)), right: tog('orig', () => SKA.setOriginal(o.orig)), act: tog('orig', () => SKA.setOriginal(o.orig)) },
         { label: ui('shake'), value: o.shake ? ui('on') : ui('off'), left: tog('shake'), right: tog('shake'), act: tog('shake') },
         { label: ui('crt'), value: o.crt ? ui('on') : ui('off'), left: tog('crt'), right: tog('crt'), act: tog('crt') },
@@ -746,7 +780,7 @@
 
       if (w.p.dead) {
         this.dead++;
-        if (this.dead === 40) {
+        if (this.dead === 24) {
           this.load(false);
           if (this.levelDeaths > 0 && (this.levelDeaths === 12 || this.levelDeaths % 30 === 0) && this.surrenderShown < this.levelDeaths) {
             this.surrenderShown = this.levelDeaths;

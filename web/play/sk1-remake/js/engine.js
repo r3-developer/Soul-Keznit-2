@@ -5,14 +5,14 @@
 
   const T = 30;
   const PHY = {
-    runMax: 5.0,
-    groundAcc: 0.9, groundDec: 1.2, turnBoost: 1.7,
+    runMax: 5.5,
+    groundAcc: 1.1, groundDec: 1.4, turnBoost: 1.8,
     airAcc: 0.62, airDec: 0.22,
     gravUp: 0.55, gravDown: 0.82, apexHang: 0.5,
     jump: 10.4, jumpCut: 0.45,
     maxFall: 12, wallSlide: 2.2,
     wallJumpX: 5.8, wallJumpY: 9.8, wallLock: 9,
-    coyote: 7, buffer: 8,
+    coyote: 9, buffer: 10,
     tramp: 16.5,
     conveyor: 2.0,
     crumbleDelay: 26, crumbleRespawn: 160,
@@ -227,8 +227,8 @@
       // freno activo
       const br = b.brakes[b.brake];
       if (br && b.stun === 0 && rectHit(p.x, p.y, p.w, p.h, br.x + 2, br.y + 2, T - 4, T - 4)) {
-        b.hits++; b.stun = 80; b.speed *= 1.3; b.spin += 0.06;
-        b.every = Math.round(b.every * 0.74); b.count += 3; b.burst = 60;
+        b.hits++; b.stun = 80; b.speed *= 1.2; b.spin += 0.06;
+        b.every = Math.round(b.every * 0.8); b.count += 2; b.burst = 70;
         b.minis.length = 0;
         w.events.push({ e: 'bossHit', x: b.x, y: b.y, hits: b.hits });
       }
@@ -265,9 +265,9 @@
       pl.dy = pl.y === undefined ? 0 : ny - pl.y;
       pl.x = nx; pl.y = ny;
     }
-    // Sierras
+    // Sierras (camino en casillas, velocidad en píxeles por paso)
     for (const s of w.saws) {
-      const pos = s.speed ? along(s.path, w.t * s.speed, s.loop) : s.path[0];
+      const pos = s.speed ? along(s.path, w.t * s.speed / T, s.loop) : s.path[0];
       s.x = pos[0] * T; s.y = pos[1] * T;
     }
 
