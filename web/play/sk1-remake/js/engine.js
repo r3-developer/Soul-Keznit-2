@@ -157,46 +157,89 @@
   }
 
   // ---------- jefe ----------
+  // Tres fases: persecución (chase), molino (mill) y huida (rise).
+  // w.bossProg (0..1) indica cuánto de la fase actual se ha superado, para la barra de vida.
   function initBoss(w) {
     const b = w.def.boss;
     w.boss = null;
     w.rise = null;
+    w.drops = [];
+    w.bossProg = 0;
     if (!b) return;
+    w.dropT = b.drops ? b.drops.first || b.drops.every : 0;
     if (b.kind === 'chase') {
-      w.boss = { kind: 'chase', x: w.start.x - 200, y: w.start.y - 240, r: 40, rot: 0, enter: 110, delay: b.delay0 };
+      const f = w.flags[0];
+      w.boss = { kind: 'chase', x: w.start.x - 200, y: w.start.y - 240, r: 40, rot: 0, enter: 90, delay: b.delay0, trail: [] };
+      w.track = { x0: w.start.x, x1: f ? f.x : w.pw };
     }
     if (b.kind === 'mill') {
       w.boss = {
         kind: 'mill', x: w.pw / 2, y: 170, r: 46, rot: 0, vx: 2.4, vy: 1.7, speed: 2.9,
         hits: 0, stun: 0, burst: 150, tele: 0, every: b.every, count: 8, minis: [], brake: 0,
-        brakes: b.brakes.map(p => ({ x: p[0] * T, y: p[1] * T })), enter: 90, down: 0, spin: 0.14,
+        brakes: b.brakes.map(p => ({ x: p[0] * T, y: p[1] * T })), enter: 90, down: 0, spin: 0.12,
+        charge: 0, chargeT: b.charge || 0, aim: null, dash: 0, rage: 0, trail: [],
       };
     }
-    if (b.rise) w.rise = { y: w.ph + 40, speed: b.rise.speed, acc: b.rise.acc, wait: b.rise.wait };
+    if (b.rise) {
+      w.rise = { y: w.ph + 40, speed: b.rise.speed, acc: b.rise.acc, wait: b.rise.wait };
+      const f = w.flags[0];
+      w.track = { y0: w.start.y, y1: f ? f.y : 0 };
+    }
+  }
+
+  // Esquirlas que caen del techo: primero un aviso donde va a caer, luego caen
+  function stepDrops(w, p) {
+    const d = w.def.boss.drops;
+    const pcx = p.x + p.w / 2, pcy = p.y + p.h / 2;
+    if (d && --w.dropT <= 0) {
+      w.dropT = d.every;
+      // apunta a donde estará el jugador, un poco por delante
+      const x = Math.max(T * 1.5, Math.min(w.pw - T * 1.5, pcx + p.vx * (d.lead || 30)));
+      let top = Math.max(T + 10, pcy - (d.height || 300));
+      // que no aparezca dentro de un bloque
+      while (top < pcy && isSolid(w, Math.floor(x / T), Math.floor(top / T))) top += T;
+      w.drops.push({ x, y: top, vy: 0, tele: d.tele || 40, r: 10, rot: 0 });
+    }
+    for (let i = w.drops.length - 1; i >= 0; i--) {
+      const s = w.drops[i];
+      s.rot += 0.25;
+      if (s.tele > 0) { s.tele--; continue; }
+      s.vy = Math.min(s.vy + 0.45, 11); s.y += s.vy;
+      if (s.y > w.ph || isSolid(w, Math.floor(s.x / T), Math.floor((s.y + s.r * 0.5) / T))) {
+        w.events.push({ e: 'shard', x: s.x, y: s.y }); w.drops.splice(i, 1); continue;
+      }
+      if (Math.hypot(s.x - pcx, s.y - pcy) < s.r + 7) return 'shard';
+    }
+    return null;
   }
 
   function stepBoss(w, p) {
     const b = w.boss;
     const pcx = p.x + p.w / 2, pcy = p.y + p.h / 2;
+    const clamp01 = (v) => Math.max(0, Math.min(1, v));
     if (b && b.kind === 'chase') {
-      b.rot += 0.32;
+      b.rot += 0.2;
       w.hist.push([pcx, pcy]);
       const d = w.def.boss;
       b.delay = Math.max(d.delay1, d.delay0 - (d.delay0 - d.delay1) * Math.min(1, w.t / d.ramp));
       const idx = w.hist.length - 1 - Math.round(b.delay);
       const target = idx >= 0 ? w.hist[idx] : [w.start.x - 60, w.start.y - 120];
+      b.trail.push([b.x, b.y]); if (b.trail.length > 6) b.trail.shift();
       if (b.enter > 0) {
         b.enter--;
-        b.x += (target[0] - b.x) * 0.06; b.y += (target[1] - b.y) * 0.06;
+        b.x += (target[0] - b.x) * 0.07; b.y += (target[1] - b.y) * 0.07;
       } else {
         b.x += (target[0] - b.x) * 0.5; b.y += (target[1] - b.y) * 0.5;
         if (Math.hypot(b.x - pcx, b.y - pcy) < b.r - 6) return 'boss';
       }
+      w.bossProg = Math.max(w.bossProg, clamp01((p.x - w.track.x0) / (w.track.x1 - w.track.x0)));
     }
     if (b && b.kind === 'mill') {
+      w.bossProg = b.hits / 3;
       if (b.down > 0) { b.down++; b.rot += 0.02; return null; }
       if (b.enter > 0) { b.enter--; b.rot += 0.08; return null; }
       const minX = 60 + b.r, maxX = w.pw - 60 - b.r, minY = 60 + b.r, maxY = w.ph - 90 - b.r;
+      b.trail.push([b.x, b.y]); if (b.trail.length > 6) b.trail.shift();
       if (b.stun > 0) {
         b.stun--; b.rot += 0.03;
         if (b.stun === 0) {
@@ -204,6 +247,26 @@
           b.brake++;
           w.events.push({ e: 'brakeOn' });
         }
+      } else if (b.aim) {
+        // embestida: se para, apunta y se lanza
+        if (b.aim.t > 0) {
+          b.aim.t--; b.rot += 0.35;
+          b.aim.x = pcx; b.aim.y = pcy;       // sigue apuntando hasta el último momento
+          if (b.aim.t === 0) {
+            const dx = b.aim.x - b.x, dy = b.aim.y - b.y, l = Math.hypot(dx, dy) || 1;
+            b.vx = dx / l * 10.5; b.vy = dy / l * 10.5; b.dash = 42;
+            w.events.push({ e: 'dash', x: b.x, y: b.y });
+          }
+        } else {
+          b.rot += 0.45;
+          b.x += b.vx; b.y += b.vy;
+          if (b.x < minX) { b.x = minX; b.vx = Math.abs(b.vx); w.events.push({ e: 'slam', x: b.x, y: b.y }); }
+          if (b.x > maxX) { b.x = maxX; b.vx = -Math.abs(b.vx); w.events.push({ e: 'slam', x: b.x, y: b.y }); }
+          if (b.y < minY) { b.y = minY; b.vy = Math.abs(b.vy); w.events.push({ e: 'slam', x: b.x, y: b.y }); }
+          if (b.y > maxY) { b.y = maxY; b.vy = -Math.abs(b.vy); w.events.push({ e: 'slam', x: b.x, y: b.y }); }
+          if (--b.dash <= 0) { b.aim = null; b.charge = b.chargeT; }
+        }
+        if (Math.hypot(b.x - pcx, b.y - pcy) < b.r - 4) return 'boss';
       } else {
         b.rot += b.spin;
         const sp = Math.hypot(b.vx, b.vy) || 1;
@@ -216,14 +279,15 @@
         if (b.x > maxX) { b.x = maxX; b.vx = -Math.abs(b.vx); }
         if (b.y < minY) { b.y = minY; b.vy = Math.abs(b.vy); }
         if (b.y > maxY) { b.y = maxY; b.vy = -Math.abs(b.vy); }
-        // ráfagas de estrellas
+        // ráfagas de estrellas (desde el segundo golpe, en dos oleadas)
         if (b.tele > 0) {
           b.tele--;
-          if (b.tele === 0) {
-            const off = (w.t * 0.37) % (Math.PI * 2);
+          if (b.tele === 0 || (b.rage >= 2 && b.tele === 20)) {
+            const off = (w.t * 0.37) % (Math.PI * 2) + (b.tele === 20 ? Math.PI / b.count : 0);
+            const v = 3.1 + b.rage * 0.35;
             for (let i = 0; i < b.count; i++) {
               const a = off + i / b.count * Math.PI * 2;
-              b.minis.push({ x: b.x, y: b.y, vx: Math.cos(a) * 3.3, vy: Math.sin(a) * 3.3, r: 9, rot: 0 });
+              b.minis.push({ x: b.x, y: b.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: 9, rot: 0 });
             }
             w.events.push({ e: 'burst', x: b.x, y: b.y });
           }
@@ -231,13 +295,19 @@
           b.tele = 42; b.burst = b.every;
           w.events.push({ e: 'tele', x: b.x, y: b.y });
         }
+        // embestida desde el primer golpe
+        if (b.rage >= 1 && b.tele === 0 && --b.charge <= 0) {
+          b.aim = { t: 48, x: pcx, y: pcy };
+          w.events.push({ e: 'aim', x: b.x, y: b.y });
+        }
         if (Math.hypot(b.x - pcx, b.y - pcy) < b.r - 4) return 'boss';
       }
       // freno activo
       const br = b.brakes[b.brake];
       if (br && b.stun === 0 && rectHit(p.x, p.y, p.w, p.h, br.x + 2, br.y + 2, T - 4, T - 4)) {
-        b.hits++; b.stun = 80; b.speed *= 1.2; b.spin += 0.06;
-        b.every = Math.round(b.every * 0.8); b.count += 2; b.burst = 70;
+        b.hits++; b.rage = b.hits; b.stun = 70; b.speed *= 1.2; b.spin += 0.05;
+        b.every = Math.round(b.every * 0.82); b.count += 2; b.burst = 80;
+        b.aim = null; b.charge = Math.round(b.chargeT * 0.6); b.chargeT = Math.round(b.chargeT * 0.8);
         b.minis.length = 0;
         w.events.push({ e: 'bossHit', x: b.x, y: b.y, hits: b.hits });
       }
@@ -254,7 +324,9 @@
       if (r.wait > 0) r.wait--;
       else { r.y -= r.speed; r.speed += r.acc; }
       if (p.y + p.h > r.y + 6) return 'rise';
+      w.bossProg = Math.max(w.bossProg, clamp01((w.track.y0 - p.y) / (w.track.y0 - w.track.y1)));
     }
+    if (w.def.boss.drops && !(b && b.enter > 0)) return stepDrops(w, p);
     return null;
   }
 

@@ -46,7 +46,7 @@
   function noise(dur, v = 0.2, freq = 1200, type = 'lowpass', when = 0, bus = sfxBus, f2 = null) {
     if (!ctx) return;
     const t = ctx.currentTime + when;
-    const s = ctx.createBufferSource(); s.buffer = noiseBuf;
+    const s = ctx.createBufferSource(); s.buffer = noiseBuf; s.loop = true;
     const f = ctx.createBiquadFilter(); f.type = type; f.frequency.setValueAtTime(freq, t);
     if (f2) f.frequency.exponentialRampToValueAtTime(f2, t + dur);
     const g = ctx.createGain();
@@ -89,6 +89,14 @@
     brake: () => arp([392, 523, 659], 0.06, 'triangle', 0.12),
     chains: () => { for (let i = 0; i < 6; i++) noise(0.06, 0.1, 4000, 'highpass', i * 0.09); },
     rumble: () => noise(1.2, 0.18, 120, 'lowpass'),
+    roar: () => { noise(1.1, 0.26, 320, 'lowpass', 0, sfxBus, 70); tone(72, 1.0, 'sawtooth', 0.15, 42); tone(146, 0.8, 'square', 0.05, 60, 0.08); },
+    dash: () => { noise(0.35, 0.18, 1600, 'bandpass', 0, sfxBus, 300); tone(320, 0.3, 'sawtooth', 0.08, 80); },
+    aim: () => { tone(500, 0.5, 'square', 0.05, 1500); },
+    slam: () => { noise(0.22, 0.2, 260, 'lowpass'); tone(70, 0.2, 'square', 0.1, 40); },
+    shard: () => { noise(0.12, 0.1, 2800, 'highpass'); tone(700, 0.08, 'square', 0.04, 300); },
+    shatter: () => { noise(1.4, 0.34, 3200, 'highpass', 0, sfxBus, 400); noise(1.8, 0.3, 700, 'lowpass', 0, sfxBus, 35); arp([1568, 1175, 880, 659, 440, 330], 0.06, 'square', 0.08); },
+    souls: () => arp([523, 659, 784, 1047, 1319, 1568, 2093], 0.11, 'sine', 0.07),
+    slamTitle: () => { noise(0.6, 0.3, 500, 'lowpass', 0, sfxBus, 40); tone(55, 0.9, 'square', 0.16, 30); },
     surrender: () => { tone(220, 0.3, 'square', 0.08, 110); },
   };
 

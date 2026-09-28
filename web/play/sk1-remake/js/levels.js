@@ -439,7 +439,7 @@
     voice: [
       { es: 'RELÁJESE. NO DUELE. BUENO, UN POCO.', en: 'RELAX. IT DOES NOT HURT. WELL, A LITTLE.' },
     ],
-    boss: { kind: 'chase', delay0: 110, delay1: 62, ramp: 1500 },
+    boss: { kind: 'chase', delay0: 62, delay1: 36, ramp: 420, drops: { every: 85, first: 150, tele: 42, lead: 45, height: 260 } },
     map: build(64, 18, ({ put, rect }) => {
       rect(1, 16, 17, 1, '#'); rect(18, 16, 9, 1, 'R'); rect(27, 16, 36, 1, '#');
       put(2, 15, 'P');
@@ -460,7 +460,7 @@
     voice: [
       { es: '¿POR QUÉ SIGUE CORRIENDO? NADIE SIGUE CORRIENDO.', en: 'WHY ARE YOU STILL RUNNING? NOBODY KEEPS RUNNING.' },
     ],
-    boss: { kind: 'mill', every: 170, brakes: [[5, 10], [26, 10], [15, 5]] },
+    boss: { kind: 'mill', every: 150, charge: 200, brakes: [[5, 10], [26, 10], [15, 5]] },
     map: [
       '################################',
       '#..............................#',
@@ -489,7 +489,7 @@
     voice: [
       { es: '¡ALERTA! LA TRITURADORA SE HA ATASCADO. ¡ALERTA!', en: 'ALERT! THE GRINDER IS JAMMED. ALERT!' },
     ],
-    boss: { kind: 'rise', rise: { speed: 0.42, acc: 0.00012, wait: 150 } },
+    boss: { kind: 'rise', rise: { speed: 0.48, acc: 0.00014, wait: 130 }, drops: { every: 95, first: 170, tele: 45, lead: 20, height: 220 } },
     map: build(32, 36, ({ put, rect }) => {
       rect(1, 34, 30, 1, '#');
       put(15, 33, 'P');
@@ -557,6 +557,21 @@
       { t: 'n', es: 'Y allí, en lo más hondo, le esperaba el Torturador.', en: 'And there, at the very bottom, the Torturer was waiting.' },
       { t: 'title', es: 'Continúa en SOUL KEZNIT 2', en: 'Continued in SOUL KEZNIT 2' },
     ],
+    // cinemática final (después de la huida)
+    finale: {
+      crack: { es: 'La Trituradora se atasca... y se agrieta.', en: 'The Grinder jams... and cracks.' },
+      freed: { es: 'Las almas que había procesado volvieron a brillar.', en: 'The souls it had processed began to shine again.' },
+      free2: { es: 'Por primera vez en siglos, subían.', en: 'For the first time in centuries, they rose.' },
+      voice: [
+        { es: 'ERROR.', en: 'ERROR.' },
+        { es: 'ALMA Nº 4.816.302: NO PROCESABLE.', en: 'SOUL NO. 4,816,302: CANNOT BE PROCESSED.' },
+        { es: 'MOTIVO: NO SE RINDE.', en: 'REASON: WILL NOT GIVE UP.' },
+        { es: 'SOLUCIÓN: ENVIAR DIRECTAMENTE AL TORTURADOR.', en: 'SOLUTION: SEND DIRECTLY TO THE TORTURER.' },
+      ],
+      down: { es: 'Y allí, en lo más hondo, le esperaba el Torturador.', en: 'And there, at the very bottom, the Torturer was waiting.' },
+      cont: { es: 'Continúa en', en: 'Continued in' },
+    },
+    phase: { es: 'FASE', en: 'PHASE' },
     memories: [
       { es: 'Una casa pequeña al final del camino. La puerta siempre abierta.', en: 'A small house at the end of the road. The door always open.' },
       { es: 'Su madre cantaba mientras cosía. Nunca terminaba la canción.', en: 'His mother sang while she sewed. She never finished the song.' },

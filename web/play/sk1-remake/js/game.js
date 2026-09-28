@@ -705,7 +705,26 @@
     draw() {
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, VH);
       const a = Math.min(1, this.t / 25, (this.o.dur - this.t) / 25);
-      if (this.o.kind === 'boss') {
+      if (this.o.kind === 'phase') {
+        // entre fases: la Trituradora ruge y la pantalla tiembla
+        const t = this.t, sh = Math.max(0, 1 - t / 60) * 14;
+        const ox = (Math.random() - 0.5) * sh, oy = (Math.random() - 0.5) * sh;
+        drawBackdrop(0, 0, `rgba(255,52,52,${0.2 + (t % 10 < 5 && t < 40 ? 0.2 : 0)})`, clock);
+        const R = 150 + Math.sin(t * 0.3) * 6;
+        star(VW / 2 + ox, VH / 2 + oy - 20, R * 1.3, -t * 0.03, 16, 0.06, `rgba(150,20,20,${0.5 * a})`);
+        glow(COL.red, 40); star(VW / 2 + ox, VH / 2 + oy - 20, R, t * 0.08, 8, 0.2, `rgba(255,52,52,${0.35 * a})`); noGlow();
+        const bar = Math.min(90, t * 5);
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, bar); ctx.fillRect(0, VH - bar, VW, bar);
+        const pop = 1 + Math.max(0, 1 - t / 14) * 0.6;
+        text(`${tr(ST.phase)} ${['I', 'II', 'III'][this.o.part]}`, VW / 2 + ox, VH / 2 - 40 + oy, 84 * pop, '#fff', 'center', 'px', a);
+        text(this.o.name.toUpperCase(), VW / 2, VH / 2 + 34, 30, COL.red, 'center', 'px', a);
+        // barra: la fase anterior ya está vacía
+        for (let k = 0; k < 3; k++) {
+          ctx.globalAlpha = a; ctx.fillStyle = k < this.o.part ? 'rgba(255,255,255,.12)' : COL.red;
+          ctx.fillRect(VW / 2 - 150 + k * 102, VH / 2 + 70, 96, 8); ctx.globalAlpha = 1;
+        }
+        if (t < 3) { flash = 0.6; flashCol = COL.red; }
+      } else if (this.o.kind === 'boss') {
         // barras de cine como en Soul Keznit 2
         const bar = Math.min(90, this.t * 4);
         drawBackdrop(0, 0, 'rgba(255,52,52,.25)', clock);
@@ -734,6 +753,8 @@
     if (L.bossPart === 0 && (fromMenu || prev !== i)) {
       go(cardScene, { kind: 'boss', dur: 190, sound: 'tele', then: begin });
       SKA.play('boss');
+    } else if (L.bossPart > 0 && prev !== i) {
+      go(cardScene, { kind: 'phase', part: L.bossPart, name: tr(L.name), dur: 150, sound: 'roar', then: begin });
     } else if (showCard && L.act < 3 && !L.bossPart) {
       go(cardScene, { kind: 'act', act: L.act, dur: 130, then: begin });
       SKA.play(L.music);
@@ -746,7 +767,7 @@
       this.L = LV[o.i];
       save.cur = o.i; persist();
       this.levelDeaths = 0; this.levelTime = 0; this.surrenderShown = 0;
-      this.check = null;
+      this.check = null; this.barShow = undefined; this.barVal = undefined; this.rageMsg = null;
       this.load(true);
       SKA.play(this.L.music);
       this.voiceQ = this.L.voice ? this.L.voice.slice() : [];
@@ -798,6 +819,7 @@
       // voz
       this.updateVoice();
       if (this.hint) this.hint.t++;
+      if (this.rageMsg) this.rageMsg.t++;
 
       if (w.p.dead) {
         this.dead++;
@@ -862,8 +884,12 @@
         case 'flag': this.complete(e); break;
         case 'death': this.die(e); break;
         case 'tele': SKA.sfx('tele'); break;
+        case 'shard': SKA.sfx('shard'); burst(e.x, e.y, 10, COL.red, 2.5, 4, 0.15, 30); addShake(3); break;
+        case 'aim': SKA.sfx('aim'); break;
+        case 'dash': SKA.sfx('dash'); addShake(8); flash = 0.12; flashCol = COL.red; break;
+        case 'slam': SKA.sfx('slam'); addShake(10); burst(e.x, e.y, 16, '#fff', 3, 4, 0.1, 30); break;
         case 'burst': SKA.sfx('burst'); addShake(4); break;
-        case 'bossHit': SKA.sfx('bossHit'); addShake(14); flash = 0.5; flashCol = COL.orange; burst(e.x, e.y, 40, COL.red, 5, 6, 0.1, 50); this.hitstop = 8; break;
+        case 'bossHit': SKA.sfx('bossHit'); setTimeout(() => SKA.sfx('roar'), 350); addShake(18); flash = 0.55; flashCol = COL.orange; burst(e.x, e.y, 50, COL.red, 6, 6, 0.1, 50); this.hitstop = 10; this.rageMsg = { t: 0, hits: e.hits }; break;
         case 'brakeOn': SKA.sfx('brake'); break;
         case 'bossDown': this.complete({ x: w.boss.x, y: w.boss.y, boss: true }); break;
       }
@@ -877,6 +903,7 @@
     complete(e) {
       const w = this.w;
       if (e.boss) { SKA.sfx('bossDown'); addShake(20); flash = 0.8; flashCol = '#fff'; for (let i = 0; i < 5; i++) burst(e.x, e.y, 30, i % 2 ? COL.red : '#fff', 6, 7, 0.1, 80); }
+      else if (this.L.bossPart !== undefined) { SKA.sfx('roar'); addShake(16); flash = 0.4; flashCol = COL.red; burst(e.x, e.y, 40, COL.red, 4, 5, 0.05, 50); }
       else { SKA.sfx('flag'); burst(e.x, e.y, 34, COL.green, 3.5, 4, 0.05, 50); flash = 0.2; flashCol = COL.green; }
       const id = this.L.id;
       if (!save.best[id] || this.levelTime < save.best[id]) save.best[id] = this.levelTime;
@@ -953,6 +980,14 @@
       const cx = Math.round(this.cam.x - sx), cy = Math.round(this.cam.y - sy);
       const tint = [null, 'rgba(181,51,255,.09)', 'rgba(255,52,52,.08)', `rgba(255,52,52,${0.14 + Math.sin(clock * 0.05) * 0.05})`][this.L.act];
       drawBackdrop(cx, cy, tint, clock);
+      // jefe: engranajes gigantes girando al fondo
+      if (this.L.act === 3) {
+        const rage = w.boss && w.boss.rage || 0;
+        for (let i = 0; i < 4; i++) {
+          const gx = 160 + i * 330 - cx * 0.3, gy = 150 + (i % 2) * 260 - cy * 0.3;
+          star(gx, gy, 150 + (i % 2) * 40, clock * (0.006 + rage * 0.004) * (i % 2 ? 1 : -1), 12, 0.09, `rgba(255,52,52,${0.05 + rage * 0.015})`);
+        }
+      }
       // capas
       ctx.drawImage(this.layers.solid, -cx, -cy);
       const pulse = 0.75 + Math.sin(clock * 0.06) * 0.15 + (Math.random() < 0.01 ? 0.3 : 0);
@@ -960,6 +995,7 @@
       this.drawTiles(cx, cy);
       this.drawEnts(cx, cy);
       if (w.boss) this.drawBoss(cx, cy);
+      if (w.drops && w.drops.length) this.drawDrops(cx, cy);
       this.drawPlayer(cx, cy);
       drawParts(cx, cy);
       if (w.rise) this.drawRise(cx, cy);
@@ -1199,38 +1235,93 @@
       const X = b.x - cx, Y = b.y - cy;
       const stun = b.stun > 0;
       const tele = b.tele > 0 ? 1 - b.tele / 42 : 0;
+      const rage = b.rage || 0;
       if (b.down) {
+        // se rompe: tiembla, se infla y estalla en trozos
         const k = Math.min(1, b.down / 90);
-        ctx.globalAlpha = 1 - k; star(X, Y + k * 60, b.r * (1 + k), b.rot, 8, 0.2); ctx.globalAlpha = 1;
-        if (b.down % 5 === 0) burst(b.x, b.y, 3, COL.red, 4, 5);
+        const jx = (Math.random() - 0.5) * 14 * (1 - k), jy = (Math.random() - 0.5) * 14 * (1 - k);
+        ctx.globalAlpha = 1 - k;
+        glow(COL.red, 40); star(X + jx, Y + jy + k * 40, b.r * (1 + k * 0.8), b.rot, 8, 0.2, b.down % 6 < 3 ? '#fff' : COL.red); noGlow();
+        ctx.globalAlpha = 1;
+        if (b.down % 4 === 0) burst(b.x, b.y, 4, b.down % 8 ? COL.red : '#fff', 5, 6, 0.1, 50);
+        if (b.down % 12 === 0) { SKA.sfx('slam'); addShake(8); }
         return;
       }
+      const pulse = 1 + Math.sin(clock * 0.22) * 0.04 + tele * 0.18 + (b.aim && b.aim.t > 0 ? 0.12 : 0);
+      const R = b.r * pulse;
+      const body = stun ? (clock % 6 < 3 ? '#fff' : COL.red) : rage >= 2 ? '#ff2020' : COL.red;
+      // estela de imágenes
+      (b.trail || []).forEach((q, i, arr) => {
+        ctx.globalAlpha = 0.05 + 0.05 * i;
+        star(q[0] - cx, q[1] - cy, R, b.rot - (arr.length - i) * 0.1, 8, 0.2, COL.red);
+      });
+      ctx.globalAlpha = 1;
       // aura
-      const gr = ctx.createRadialGradient(X, Y, 10, X, Y, b.r * 2.2);
-      gr.addColorStop(0, `rgba(255,52,52,${0.35 + tele * 0.4})`); gr.addColorStop(1, 'rgba(255,52,52,0)');
-      ctx.fillStyle = gr; ctx.fillRect(X - b.r * 2.2, Y - b.r * 2.2, b.r * 4.4, b.r * 4.4);
-      // desenfoque de movimiento
-      ctx.globalAlpha = 0.25; star(X, Y, b.r, b.rot - 0.15, 8, 0.2); ctx.globalAlpha = 1;
-      glow(COL.red, 24);
-      star(X, Y, b.r, b.rot, 8, 0.2, stun && clock % 6 < 3 ? '#fff' : COL.red);
+      const gr = ctx.createRadialGradient(X, Y, 10, X, Y, R * 2.6);
+      gr.addColorStop(0, `rgba(255,52,52,${0.4 + tele * 0.4 + rage * 0.08})`); gr.addColorStop(1, 'rgba(255,52,52,0)');
+      ctx.fillStyle = gr; ctx.fillRect(X - R * 2.6, Y - R * 2.6, R * 5.2, R * 5.2);
+      // anillo de dientes que gira al revés
+      star(X, Y, R * 1.28, -b.rot * 0.55, 16, 0.07, rage >= 1 ? 'rgba(255,120,60,.55)' : 'rgba(150,20,20,.8)');
+      // cuerpo
+      glow(COL.red, 26 + rage * 8);
+      star(X, Y, R, b.rot, 8, 0.22, body);
       noGlow();
       // ojo
-      ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(X, Y, b.r * 0.34, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(X, Y, b.r * 0.26, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(X, Y, R * 0.36, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = rage >= 2 ? '#ffd0d0' : '#fff'; ctx.beginPath(); ctx.arc(X, Y, R * 0.27, 0, Math.PI * 2); ctx.fill();
       const ang = Math.atan2(p.y + 11 - b.y, p.x + 11 - b.x);
-      ctx.fillStyle = stun ? COL.red : '#000';
-      ctx.beginPath(); ctx.arc(X + Math.cos(ang) * b.r * 0.1, Y + Math.sin(ang) * b.r * 0.1, b.r * (stun ? 0.08 : 0.12), 0, Math.PI * 2); ctx.fill();
+      const ex = X + Math.cos(ang) * R * 0.1, ey = Y + Math.sin(ang) * R * 0.1;
+      if (rage >= 1 && !stun) { ctx.fillStyle = COL.red; ctx.beginPath(); ctx.arc(ex, ey, R * 0.17, 0, Math.PI * 2); ctx.fill(); }
+      ctx.fillStyle = '#000';
+      ctx.beginPath(); ctx.arc(ex, ey, R * (stun ? 0.07 : 0.11), 0, Math.PI * 2); ctx.fill();
+      // ceño
+      if (!stun) {
+        ctx.fillStyle = '#000';
+        ctx.save(); ctx.translate(X, Y - R * 0.3); ctx.rotate(0.28 + rage * 0.06); ctx.fillRect(-R * 0.4, -R * 0.08, R * 0.8, R * 0.14); ctx.restore();
+      } else {
+        for (let i = 0; i < 3; i++) { const a = clock * 0.12 + i * 2.1; star(X + Math.cos(a) * R * 0.9, Y - R * 0.9 + Math.sin(a) * 8, 6, clock * 0.2, 4, 0.3, '#fff'); }
+      }
       // grietas
       ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
       for (let i = 0; i < (b.hits || 0); i++) {
         const a = b.rot + i * 2.1;
-        ctx.beginPath(); ctx.moveTo(X + Math.cos(a) * b.r * 0.4, Y + Math.sin(a) * b.r * 0.4);
-        ctx.lineTo(X + Math.cos(a + 0.3) * b.r * 0.7, Y + Math.sin(a + 0.3) * b.r * 0.7);
-        ctx.lineTo(X + Math.cos(a) * b.r, Y + Math.sin(a) * b.r); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(X + Math.cos(a) * R * 0.4, Y + Math.sin(a) * R * 0.4);
+        ctx.lineTo(X + Math.cos(a + 0.3) * R * 0.7, Y + Math.sin(a + 0.3) * R * 0.7);
+        ctx.lineTo(X + Math.cos(a) * R, Y + Math.sin(a) * R); ctx.stroke();
       }
-      if (tele) { ctx.strokeStyle = `rgba(255,52,52,${tele})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(X, Y, b.r * (2 - tele), 0, Math.PI * 2); ctx.stroke(); }
+      // aviso de ráfaga
+      if (tele) { ctx.strokeStyle = `rgba(255,52,52,${tele})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(X, Y, R * (2 - tele), 0, Math.PI * 2); ctx.stroke(); }
+      // aviso de embestida
+      if (b.aim && b.aim.t > 0) {
+        const on = clock % 8 < 5;
+        ctx.strokeStyle = on ? 'rgba(255,52,52,.9)' : 'rgba(255,255,255,.6)'; ctx.lineWidth = 3; ctx.setLineDash([10, 8]);
+        ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(X + (b.aim.x - b.x) * 3, Y + (b.aim.y - b.y) * 3); ctx.stroke(); ctx.setLineDash([]);
+        text('!', X, Y - R - 22, 34, on ? COL.red : '#fff');
+      }
+      // brasas
+      if (clock % 2 === 0) burst(b.x + (Math.random() - 0.5) * R, b.y + (Math.random() - 0.5) * R, 1, Math.random() < 0.5 ? COL.red : COL.orange, 1.2, 3, -0.03, 35);
       if (stun && clock % 4 === 0) burst(b.x, b.y, 2, '#fff', 3, 3);
       for (const m of b.minis || []) { glow(COL.red, 10); star(m.x - cx, m.y - cy, m.r + 3, m.rot, 8, 0.28); noGlow(); }
+    },
+    drawDrops(cx, cy) {
+      const w = this.w;
+      for (const s of w.drops || []) {
+        const X = s.x - cx, Y = s.y - cy;
+        if (s.tele > 0) {
+          // línea de aviso hasta el suelo
+          let r = Math.floor(s.y / T);
+          while (r < w.H && !SKE.isSolid(w, Math.floor(s.x / T), r)) r++;
+          const gy = r * T - cy, on = clock % 10 < 6;
+          ctx.strokeStyle = `rgba(255,52,52,${on ? 0.55 : 0.25})`; ctx.lineWidth = 2; ctx.setLineDash([6, 6]);
+          ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(X, gy); ctx.stroke(); ctx.setLineDash([]);
+          ctx.fillStyle = on ? COL.red : 'rgba(255,52,52,.4)';
+          ctx.beginPath(); ctx.moveTo(X - 9, gy); ctx.lineTo(X + 9, gy); ctx.lineTo(X, gy - 12); ctx.fill();
+          star(X + (Math.random() - 0.5) * 3, Y, s.r * (0.5 + 0.5 * (1 - s.tele / 45)), s.rot, 8, 0.28, 'rgba(255,52,52,.8)');
+        } else {
+          glow(COL.red, 14); star(X, Y, s.r + 3, s.rot, 8, 0.28); noGlow();
+          if (clock % 2 === 0) burst(s.x, s.y - 8, 1, COL.orange, 0.6, 3, -0.02, 18);
+        }
+      }
     },
     drawPlayer(cx, cy) {
       const w = this.w, p = w.p;
@@ -1258,6 +1349,20 @@
     drawRise(cx, cy) {
       const r = this.w.rise, top = r.y - cy;
       if (top > VH + 20) return;
+      // la Trituradora, atascada, sube con la lava y mira al jugador
+      {
+        const p = this.w.p, X = VW / 2 + Math.sin(clock * 0.02) * 120, Y = top + 30, R = 95;
+        const jam = Math.sin(clock * 0.9) * 0.08 + clock * 0.02;
+        glow(COL.red, 40); star(X, Y, R, jam, 8, 0.2, '#ff2a2a'); noGlow();
+        star(X, Y, R * 1.25, -jam * 0.6, 16, 0.07, 'rgba(255,120,60,.5)');
+        ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(X, Y, R * 0.36, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(X, Y, R * 0.27, 0, Math.PI * 2); ctx.fill();
+        const ang = Math.atan2(p.y + 11 - cy - Y, p.x + 11 - cx - X);
+        ctx.fillStyle = COL.red; ctx.beginPath(); ctx.arc(X + Math.cos(ang) * R * 0.1, Y + Math.sin(ang) * R * 0.1, R * 0.16, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(X + Math.cos(ang) * R * 0.1, Y + Math.sin(ang) * R * 0.1, R * 0.09, 0, Math.PI * 2); ctx.fill();
+        ctx.save(); ctx.translate(X, Y - R * 0.3); ctx.rotate(0.4); ctx.fillStyle = '#000'; ctx.fillRect(-R * 0.4, -R * 0.08, R * 0.8, R * 0.14); ctx.restore();
+        if (clock % 5 === 0) burst(X + cx + (Math.random() - 0.5) * R, Y + cy - R * 0.5, 1, '#fff', 2, 3, 0.1, 25);
+      }
       glow(COL.red, 30);
       ctx.fillStyle = COL.red;
       ctx.beginPath(); ctx.moveTo(0, VH);
@@ -1326,22 +1431,32 @@
         if (this.w.gotFrag) { ctx.fillStyle = '#fff'; ctx.fillRect(-5, -5, 10, 10); } else { ctx.strokeStyle = 'rgba(255,255,255,.4)'; ctx.lineWidth = 2; ctx.strokeRect(-5, -5, 10, 10); }
         ctx.restore();
       }
-      if (this.w.boss && this.w.boss.kind === 'mill') {
-        for (let i = 0; i < 3; i++) { ctx.fillStyle = i < this.w.boss.hits ? COL.orange : 'rgba(255,170,51,.2)'; ctx.fillRect(VW / 2 - 50 + i * 36, 18, 28, 8); }
-      }
+      if (L.bossPart !== undefined) this.drawBossBar();
       if (this.voice) {
         const v = this.voice, s = v.s.slice(0, Math.floor(v.c));
         const al = Math.min(1, v.t / 12, (v.s.length * 1.25 + 170 - v.t) / 20);
-        const ls = wrap(v.s, 640, 15), bw = 680, bx = (VW - bw) / 2, by = 46, bh = 26 + ls.length * 18;
+        const ls = wrap(v.s, 640, 15), bw = 680, bx = (VW - bw) / 2, by = L.bossPart !== undefined ? 72 : 46, bh = 26 + ls.length * 18;
         ctx.globalAlpha = al * 0.72; ctx.fillStyle = '#000'; ctx.fillRect(bx, by, bw, bh);
         ctx.fillStyle = COL.red; ctx.fillRect(bx, by, 3, bh); ctx.globalAlpha = 1;
         text(ui('voice'), bx + 14, by + 11, 10, COL.red, 'left', 'px', al * 0.9);
         let left = s.length;
         ls.forEach((l, k) => { const part = l.slice(0, Math.max(0, left)); left -= l.length + 1; text(part, bx + 14, by + 29 + k * 18, 15, '#fff', 'left', 'px', al); });
       }
-      if (this.hint && this.hint.t < 200) {
-        const al = Math.min(1, this.hint.t / 15, (200 - this.hint.t) / 30);
-        text(this.hint.s, VW / 2, VH / 2 - 120, 34, COL.orange, 'center', 'px', al);
+      if (this.hint && this.hint.t < 230) {
+        const t = this.hint.t, al = Math.min(1, t / 15, (230 - t) / 30);
+        if (L.bossPart !== undefined) {
+          const slide = Math.max(0, 1 - t / 18) * 80;
+          ctx.globalAlpha = al * 0.7; ctx.fillStyle = '#000'; ctx.fillRect(0, VH / 2 - 196, VW, 156); ctx.globalAlpha = 1;
+          text(`${tr(ST.phase)} ${['I', 'II', 'III'][L.bossPart]}`, VW / 2 - slide, VH / 2 - 150, 54, '#fff', 'center', 'px', al);
+          ctx.fillStyle = COL.red; ctx.globalAlpha = al; ctx.fillRect(VW / 2 - 90 + slide, VH / 2 - 118, 180, 4); ctx.globalAlpha = 1;
+          text(tr(L.name).toUpperCase(), VW / 2 + slide, VH / 2 - 94, 22, 'rgba(255,255,255,.8)', 'center', 'px', al);
+          text(this.hint.s, VW / 2, VH / 2 - 60, 26, COL.orange, 'center', 'px', al * (t > 40 ? 1 : t / 40));
+        } else text(this.hint.s, VW / 2, VH / 2 - 120, 34, COL.orange, 'center', 'px', al);
+      }
+      if (this.rageMsg && this.rageMsg.t < 110) {
+        const m = this.rageMsg, al = Math.min(1, m.t / 8, (110 - m.t) / 20);
+        const msg = m.hits >= 3 ? (save.lang === 'en' ? 'IT BREAKS!' : '¡SE ROMPE!') : (save.lang === 'en' ? 'IT GETS ANGRIER!' : '¡SE ENFURECE!');
+        text(msg, VW / 2 + (Math.random() - 0.5) * 4, VH / 2 - 130, 44, m.hits >= 3 ? '#fff' : COL.red, 'center', 'px', al);
       }
       if (this.memory) {
         const m = this.memory, al = Math.min(1, m.t / 30, (460 - m.t) / 40);
@@ -1350,6 +1465,28 @@
         text(m.s, VW / 2, VH - 54, 26, '#fff', 'center', 'serif', al);
       }
       if (this.L.id === '1-1' && this.nameT < 400 && !save.beaten && usingTouch) text('←  →  ⤒', VW / 2, VH - 40, 16, 'rgba(255,255,255,.4)');
+    },
+    drawBossBar() {
+      const part = this.L.bossPart, w = this.w;
+      this.barShow = this.barShow === undefined ? 0 : this.barShow + (1 - this.barShow) * 0.08;
+      const prog = w.bossProg || 0;
+      this.barVal = this.barVal === undefined ? prog : this.barVal + (prog - this.barVal) * 0.15;
+      const bw = 360, seg = (bw - 12) / 3, x0 = VW / 2 - bw / 2, y = 38 - (1 - this.barShow) * 30;
+      text(tr(ST.boss.name), VW / 2, y - 16, 14, COL.red, 'center', 'px', this.barShow);
+      for (let k = 0; k < 3; k++) {
+        const fill = k < part ? 0 : k > part ? 1 : 1 - prog;
+        const sx = x0 + k * (seg + 6);
+        ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(sx, y, seg, 10);
+        if (fill > 0) {
+          if (k === part) glow(COL.red, 10 + Math.sin(clock * 0.2) * 5);
+          ctx.fillStyle = k === part ? COL.red : 'rgba(255,52,52,.45)'; ctx.fillRect(sx, y, seg * fill, 10);
+          noGlow();
+          // lo perdido parpadea en blanco
+        }
+        if (k === part && prog > this.barVal + 0.002) { ctx.fillStyle = '#fff'; ctx.fillRect(sx + seg * fill, y, seg * (prog - this.barVal), 10); }
+        ctx.strokeStyle = k === part ? 'rgba(255,255,255,.7)' : 'rgba(255,255,255,.2)'; ctx.lineWidth = 1; ctx.strokeRect(sx + 0.5, y + 0.5, seg - 1, 9);
+        text(['I', 'II', 'III'][k], sx + seg / 2, y + 22, 11, k === part ? '#fff' : 'rgba(255,255,255,.3)', 'center', 'px', this.barShow);
+      }
     },
     drawTouch() {
       for (const k in TBTN) {
@@ -1399,7 +1536,193 @@
   function finishGame() {
     const first = !save.beaten;
     save.beaten = true; save.cur = LV.findIndex(l => l.bossPart === 0); persist();
-    go(storyScene, { pages: ST.ending, skippable: !first, music: 'final', then: () => go(statsScene) });
+    go(finaleScene, { skippable: !first, then: () => go(statsScene) });
+  }
+
+  // ---------- cinemática final ----------
+  // A: la Trituradora estalla · B: las almas suben · C: la Voz · D: cadenas y caída · E: el Torturador · F: título
+  const FIN = { blast: 170, souls: 260, voice: 640, chains: 1010, eyes: 1230, title: 1490 };
+  const finaleScene = {
+    enter(o) { this.o = o; this.t = 0; this.shards = []; this.souls = []; this.ky = 0; this.kv = 0; SKA.play(null); SKA.sfx('rumble'); },
+    update() {
+      const t = ++this.t, F = ST.finale;
+      if (pressed.has('back') && this.o.skippable) { this.o.then(); return; }
+      if (t >= FIN.title + 90 && (pressed.has('confirm') || pressed.has('jump'))) { SKA.sfx('select'); this.o.then(); return; }
+      // A · grietas y estallido
+      if (t === 40 || t === 90 || t === 135) { SKA.sfx('crack'); SKA.sfx('slam'); shake = Math.max(shake, 6 + t / 20); }
+      if (t === FIN.blast) {
+        SKA.sfx('shatter'); shake = 30; flash = 1; flashCol = '#fff';
+        for (let i = 0; i < 8; i++) {
+          const a = i / 8 * Math.PI * 2 + 0.2, v = 7 + Math.random() * 4;
+          this.shards.push({ x: 0, y: 0, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 5, rot: a, vr: (Math.random() - 0.5) * 0.4 });
+        }
+        for (let i = 0; i < 6; i++) burst(GX, GY, 30, i % 2 ? COL.red : '#fff', 9, 7, 0.12, 90);
+      }
+      const slow = t > FIN.blast && t < FIN.blast + 40 ? 0.35 : 1;
+      for (const q of this.shards) { q.x += q.vx * slow; q.y += q.vy * slow; q.vy += 0.3 * slow; q.rot += q.vr * slow; }
+      // B · almas liberadas
+      if (t === FIN.souls) { SKA.play('final'); SKA.sfx('souls'); }
+      if (t > FIN.blast + 20 && t < FIN.voice - 60 && t % 3 === 0) {
+        this.souls.push({ x: GX + (Math.random() - 0.5) * 160, y: GY + 10, vy: -(0.8 + Math.random() * 1.6), ph: Math.random() * 6, sz: 6 + Math.random() * 8, a: 0 });
+      }
+      for (const q of this.souls) { q.y += q.vy; q.a = Math.min(1, q.a + 0.03); q.ph += 0.05; }
+      this.souls = this.souls.filter(q => q.y > -30);
+      // C · la Voz
+      F.voice.forEach((v, i) => {
+        const st = FIN.voice + 40 + i * 85, n = tr(v).length;
+        const c = (t - st) * 0.7;
+        if (c > 0 && c < n && Math.floor(c) % 2 === 0) SKA.sfx('blip');
+      });
+      if (t === FIN.voice + 40 + 2 * 85 + 20) { shake = 12; SKA.sfx('slam'); }
+      // D · cadenas y caída
+      if (t === FIN.chains) SKA.sfx('chains');
+      if (t === FIN.chains + 55) { SKA.sfx('rumble'); SKA.sfx('chains'); shake = 14; }
+      if (t > FIN.chains + 70) { this.kv += 0.35; this.ky += this.kv; }
+      // E · el Torturador
+      if (t === FIN.eyes) SKA.play(null);
+      if (t === FIN.eyes + 40) { SKA.sfx('roar'); shake = 10; }
+      // F · título
+      if (t === FIN.title) SKA.play('final');
+      if (t === FIN.title + 60) { SKA.sfx('slamTitle'); shake = 22; flash = 0.7; flashCol = '#fff'; }
+    },
+    draw() {
+      const t = this.t, F = ST.finale;
+      const sx = shake ? (Math.random() - 0.5) * shake : 0, sy = shake ? (Math.random() - 0.5) * shake : 0;
+      ctx.save(); ctx.translate(sx, sy);
+      ctx.fillStyle = '#000'; ctx.fillRect(-20, -20, VW + 40, VH + 40);
+      const fadeIn = (a, b) => Math.max(0, Math.min(1, (t - a) / 30, (b - t) / 30));
+      if (t < FIN.voice) {
+        // escenario: saliente a la izquierda y lava abajo
+        drawBackdrop(0, 0, `rgba(255,52,52,${t < FIN.blast ? 0.18 : 0.08})`, clock);
+        const calm = t > FIN.blast ? Math.min(1, (t - FIN.blast) / 200) : 0;
+        const lavaY = VH - 80 + calm * 30;
+        glow(COL.red, 30 * (1 - calm)); ctx.fillStyle = calm ? `rgb(${255 - calm * 120},${52 - calm * 20},${52 - calm * 20})` : COL.red;
+        ctx.beginPath(); ctx.moveTo(-20, VH + 20);
+        for (let x = -20; x <= VW + 20; x += 20) ctx.lineTo(x, lavaY + Math.sin(x * 0.03 + clock * 0.1) * (5 - calm * 4));
+        ctx.lineTo(VW + 20, VH + 20); ctx.fill(); noGlow();
+        ctx.fillStyle = '#fff'; ctx.fillRect(-20, KY, KX + 60, VH);
+        // la Trituradora
+        if (t < FIN.blast) {
+          const k = t / FIN.blast, j = k * 10;
+          const X = GX + (Math.random() - 0.5) * j, Y = GY + (Math.random() - 0.5) * j;
+          const gr = ctx.createRadialGradient(X, Y, 10, X, Y, 260);
+          gr.addColorStop(0, `rgba(255,52,52,${0.3 + k * 0.4})`); gr.addColorStop(1, 'rgba(255,52,52,0)');
+          ctx.fillStyle = gr; ctx.fillRect(X - 260, Y - 260, 520, 520);
+          const rot = Math.sin(t * 0.8) * 0.06 * (1 + k * 3);
+          star(X, Y, 130, -rot, 16, 0.07, 'rgba(150,20,20,.8)');
+          glow(COL.red, 30 + k * 30); star(X, Y, 105 * (1 + k * 0.08), rot, 8, 0.22, t % 10 < 2 && k > 0.6 ? '#fff' : COL.red); noGlow();
+          ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(X, Y, 38, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(X, Y, 28, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = COL.red; ctx.beginPath(); ctx.arc(X - 8, Y - 2, 15 * (1 - k * 0.5), 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(X - 8, Y - 2, 8 * (1 - k * 0.6), 0, Math.PI * 2); ctx.fill();
+          // grietas blancas que crecen
+          ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
+          const cracks = t > 135 ? 3 : t > 90 ? 2 : t > 40 ? 1 : 0;
+          for (let i = 0; i < cracks; i++) {
+            const a = i * 2.2 + 0.5;
+            ctx.beginPath(); ctx.moveTo(X + Math.cos(a) * 30, Y + Math.sin(a) * 30);
+            ctx.lineTo(X + Math.cos(a + 0.35) * 60, Y + Math.sin(a + 0.35) * 60);
+            ctx.lineTo(X + Math.cos(a - 0.1) * 110, Y + Math.sin(a - 0.1) * 110); ctx.stroke();
+          }
+          if (t % 3 === 0) burst(X + (Math.random() - 0.5) * 150, Y - 40, 1, Math.random() < 0.5 ? '#fff' : COL.orange, 3 + k * 3, 3, 0.15, 30);
+        }
+        // onda expansiva y trozos
+        if (t >= FIN.blast && t < FIN.blast + 60) {
+          const k = (t - FIN.blast) / 60;
+          ctx.strokeStyle = `rgba(255,255,255,${1 - k})`; ctx.lineWidth = 10 * (1 - k) + 1;
+          ctx.beginPath(); ctx.arc(GX, GY, k * 700, 0, Math.PI * 2); ctx.stroke();
+        }
+        for (const q of this.shards) {
+          ctx.save(); ctx.translate(GX + q.x, GY + q.y); ctx.rotate(q.rot);
+          glow(COL.red, 12); ctx.fillStyle = COL.red; ctx.fillRect(-50, -11, 100, 22); noGlow(); ctx.restore();
+        }
+        // almas que suben
+        for (const q of this.souls) {
+          const X = q.x + Math.sin(q.ph) * 10, fade = q.a * Math.min(1, q.y / 120);
+          ctx.globalAlpha = Math.max(0, fade) * 0.9; glow('#fff', 14);
+          ctx.fillStyle = '#fff'; ctx.fillRect(X - q.sz / 2, q.y - q.sz / 2, q.sz, q.sz); noGlow();
+        }
+        ctx.globalAlpha = 1;
+        // Keznit mira la escena
+        const look = t > FIN.blast + 30 ? { x: 0, y: -3 } : { x: 3, y: 0 };
+        soul(KX, KY - 12, 24, 1, look);
+        // narración
+        if (t < FIN.blast) text(tr(F.crack), VW / 2, 70, 26, 'rgba(255,255,255,.85)', 'center', 'serif', fadeIn(20, FIN.blast - 10));
+        text(tr(F.freed), VW / 2, 70, 30, '#fff', 'center', 'serif', fadeIn(FIN.souls + 30, FIN.souls + 200));
+        text(tr(F.free2), VW / 2, 70, 30, '#fff', 'center', 'serif', fadeIn(FIN.souls + 210, FIN.voice - 20));
+      } else if (t < FIN.eyes) {
+        // la Voz: fondo que se apaga con interferencias rojas
+        const dark = Math.min(1, (t - FIN.voice) / 40);
+        drawBackdrop(0, 0, `rgba(255,52,52,${0.08 * (1 - dark)})`, clock);
+        ctx.fillStyle = `rgba(0,0,0,${dark * 0.85})`; ctx.fillRect(-20, -20, VW + 40, VH + 40);
+        if (Math.random() < 0.25) { ctx.fillStyle = 'rgba(255,52,52,.12)'; ctx.fillRect(0, Math.random() * VH, VW, 4 + Math.random() * 20); }
+        text(ui('voice'), VW / 2, 100, 14, COL.red, 'center', 'px', dark);
+        F.voice.forEach((v, i) => {
+          const st = FIN.voice + 40 + i * 85, full = tr(v), c = Math.floor((t - st) * 0.7);
+          if (c <= 0) return;
+          const gl = i === 0 && t % 20 < 3 ? (Math.random() - 0.5) * 10 : 0;
+          text(full.slice(0, c), VW / 2 + gl, 160 + i * 52, i === 0 ? 48 : 26, i === 0 || i === 2 ? COL.red : '#fff');
+        });
+        // Keznit, en el centro
+        const kx = VW / 2, ky = VH - 130 + this.ky;
+        if (t >= FIN.chains) {
+          const grow = Math.min(1, (t - FIN.chains) / 45);
+          ctx.strokeStyle = COL.red; ctx.lineWidth = 4;
+          for (const side of [-1, 1]) {
+            const x0 = VW / 2 + side * (VW / 2 + 20), y0 = VH + 20;
+            for (let k = 0; k <= 14 * grow; k++) {
+              const q = k / 14;
+              const x = x0 + (kx + side * 12 - x0) * q, y = y0 + (ky - y0) * q - Math.sin(q * Math.PI) * 60;
+              ctx.save(); ctx.translate(x, y); ctx.rotate(q * 2 + side + t * 0.02); ctx.strokeRect(-7, -4, 14, 8); ctx.restore();
+            }
+          }
+          // líneas de velocidad al caer
+          if (t > FIN.chains + 70) {
+            ctx.fillStyle = 'rgba(255,255,255,.15)';
+            for (let i = 0; i < 14; i++) { const x = (i * 71 + 13) % VW, y = (VH - ((t * 22 + i * 97) % (VH + 200))); ctx.fillRect(x, y, 2, 120); }
+          }
+        }
+        if (ky < VH + 40) soul(kx, ky, 26, 1, { x: 0, y: t > FIN.chains ? 3 : 0 }, t > FIN.chains + 40);
+      } else if (t < FIN.title) {
+        // el Torturador abre los ojos
+        const o = Math.max(0, Math.min(1, (t - FIN.eyes - 40) / 40));
+        const blink = t > FIN.eyes + 170 && t < FIN.eyes + 180 ? 0.1 : 1;
+        for (const side of [-1, 1]) {
+          const X = VW / 2 + side * 130, Y = 200, h = 46 * o * blink;
+          glow(COL.red, 40 * o);
+          ctx.fillStyle = COL.red;
+          ctx.beginPath(); ctx.ellipse(X, Y, 90, Math.max(0.5, h), side * 0.18, 0, Math.PI * 2); ctx.fill();
+          noGlow();
+          ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(X - side * 10, Y, 10, Math.max(0.5, h * 0.9), 0, 0, Math.PI * 2); ctx.fill();
+        }
+        text(tr(F.down), VW / 2, VH - 110, 30, '#fff', 'center', 'serif', fadeIn(FIN.eyes + 90, FIN.title - 10));
+      } else {
+        // título
+        const k = t - FIN.title;
+        drawBackdrop(0, 0, 'rgba(255,52,52,.08)', clock);
+        text(tr(F.cont), VW / 2, 180, 28, 'rgba(255,255,255,.75)', 'center', 'serif', Math.min(1, k / 30));
+        if (k >= 60) {
+          const pop = 1 + Math.max(0, 1 - (k - 60) / 10) * 0.8;
+          text('SOUL KEZNIT', VW / 2, 270, 70 * pop, '#fff');
+          glow(COL.red, 30); text('2', VW / 2, 360, 100 * pop, COL.red); noGlow();
+        }
+        if (k > 90) text(ui('press'), VW / 2, VH - 40, 14, (clock % 60 < 30) ? 'rgba(255,255,255,.6)' : 'rgba(255,255,255,.3)');
+      }
+      ctx.restore();
+      if (flash > 0) { ctx.globalAlpha = flash; ctx.fillStyle = flashCol; ctx.fillRect(0, 0, VW, VH); ctx.globalAlpha = 1; }
+      if (this.o.skippable && t < FIN.title) text(ui('skip'), 30, VH - 26, 12, 'rgba(255,255,255,.25)', 'left');
+    },
+  };
+  const GX = VW / 2 + 110, GY = VH - 120, KX = VW / 2 - 300, KY = VH - 150;
+  // Keznit: cuadrado blanco con ojos que miran hacia 'look'
+  function soul(x, y, sz, a, look, scared) {
+    ctx.globalAlpha = a; glow('#fff', 20);
+    const j = scared ? (Math.random() - 0.5) * 3 : 0;
+    ctx.fillStyle = '#fff'; ctx.fillRect(x - sz / 2 + j, y - sz / 2, sz, sz); noGlow();
+    ctx.fillStyle = '#000';
+    const ex = look.x, ey = look.y;
+    ctx.fillRect(x - 7 + ex + j, y - 5 + ey, 3, scared ? 7 : 5); ctx.fillRect(x + 4 + ex + j, y - 5 + ey, 3, scared ? 7 : 5);
+    ctx.globalAlpha = 1;
   }
   const statsScene = {
     enter() { this.t = 0; SKA.play('final'); },
@@ -1470,5 +1793,7 @@
     const i = LV.findIndex(l => l.id === qs.get('nivel'));
     if (i >= 0) fontsReady.then(() => { if (!save.lang) save.lang = 'es'; save.started = true; save.unlocked = Math.max(save.unlocked, i); startLevel(i, true); });
   }
+  // ?final: ver la cinemática final directamente (se puede saltar con Esc)
+  if (qs.has('final')) fontsReady.then(() => { if (!save.lang) save.lang = 'es'; go(finaleScene, { skippable: true, then: () => go(titleScene) }); });
   window.SKGame = { play, go: (i) => startLevel(i, true), get scene() { return scene === play ? 'play' : 'other'; }, save: () => save };
 })();

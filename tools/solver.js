@@ -16,14 +16,15 @@ function clone(w) {
   c.saws = w.saws.map(k => Object.assign({}, k));
   if (w.p.ride) c.p.ride = c.plats[w.plats.indexOf(w.p.ride)];
   c.rise = w.rise && Object.assign({}, w.rise);
-  c.boss = w.boss && Object.assign({}, w.boss, { minis: (w.boss.minis || []).map(m => Object.assign({}, m)) });
+  c.boss = w.boss && Object.assign({}, w.boss, { minis: (w.boss.minis || []).map(m => Object.assign({}, m)), trail: (w.boss.trail || []).slice(), aim: w.boss.aim && Object.assign({}, w.boss.aim) });
+  c.drops = (w.drops || []).map(d => Object.assign({}, d));
   c.hist = w.hist.slice();
   c.events = [];
   return c;
 }
 function key(w, held, timed, q) {
   const p = w.p;
-  let k = `${Math.round(p.x / q)},${Math.round(p.y / q)},${Math.round(p.vx)},${Math.round(p.vy)},${p.onGround ? 1 : 0},${held ? 1 : 0},${w.hasKey ? 1 : 0},${w.phase},${w.gotFrag ? 1 : 0}`;
+  let k = `${(w.drops || []).length}:${Math.round(p.x / q)},${Math.round(p.y / q)},${Math.round(p.vx)},${Math.round(p.vy)},${p.onGround ? 1 : 0},${held ? 1 : 0},${w.hasKey ? 1 : 0},${w.phase},${w.gotFrag ? 1 : 0}`;
   if (w.crumble.size) k += '|' + [...w.crumble.keys()].sort().join('.');
   if (timed) k += '|' + Math.floor((w.period ? w.t % w.period : w.t) / HOLD);
   return k;
@@ -40,7 +41,7 @@ function goalOf(w, wantFrag) {
   if (w.keys.length && !w.hasKey) return w.keys[0];
   return w.flags[0];
 }
-function solve(def, wantFrag, maxNodes = 400000, opts = {}) {
+function solve(def, wantFrag, maxNodes = +process.env.SOLVER_MAX || 400000, opts = {}) {
   const w0 = SKE.create(def, opts);
   const timed = !!(w0.plats.length || w0.saws.some(s => s.speed) || def.map.some(r => /[xy]/.test(r)) || w0.rise || w0.boss);
   const q = timed ? 5 : 3;
