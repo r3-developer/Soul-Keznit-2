@@ -7,7 +7,7 @@
     persecución pegada + esquirlas que caen; molino con 3 frenos, embestidas y ráfagas dobles; huida con lava, esquirlas y la Trituradora asomando.
   - Cinemática final animada (finaleScene; ver con ?final): estallido, almas liberadas, la Voz, cadenas, ojos del Torturador, título SK2.
   - 13 fragmentos, selección de niveles, récords, opciones (volumen con barras de ratón, música original, sacudida, retro, idioma), mando y táctil. VOLVER de Recuerdos y Créditos funciona con ratón.
-  - Ajuste: sierras a velocidad normal, correr más rápido, más margen de salto, reaparición rápida, jefe más suave.
+  - Ajuste: sierras a velocidad normal, correr más rápido, más margen de salto, reaparición rápida.
   - Puntos de control (casilla C) en 2-4, 3-1, 3-3. Inercia de cinta y aire. 3-1: pincho bajo y sierra pequeña pegada al techo.
   - tools/solver.js comprueba niveles (`--frag`, `--checks`); probe.js tramos. SK1 original en /soul-keznit/.
 - SK2 en Scratch (.sb3 en scratch/). Página SK2: historia en 5 capítulos y zonas en filas con su trasfondo.
