@@ -10,9 +10,8 @@
 <meta property="og:image" content="/img/sk1r/titulo.jpg">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="/img/sk2/emblema.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=EB+Garamond:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/cinzel.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css">
 <link rel="stylesheet" href="/assets/game.css">
 <style>
@@ -282,7 +281,7 @@
   </div>
 </footer>
 
-<script src="/assets/site.js"></script>
+<script src="/assets/site.js" defer></script>
 <script>
 // Cambiar entre el remake y el original de Scratch
 (() => {

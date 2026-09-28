@@ -23,7 +23,7 @@
       voice: 'RECEPCIÓN DEL ABISMO', soldier: 'ALMA Nº 4.816.301', menuHint: '↑↓ ELEGIR · ENTER ACEPTAR · ESC VOLVER',
       optHint: '←→ CAMBIAR · ESC VOLVER', skip: 'ESC · SALTAR', next: 'ESPACIO', thanks: 'Gracias por no rendirte.',
       locked: 'BLOQUEADO', best: 'MEJOR', memEmpty: 'Recuerdo perdido. Búscalo en el nivel', memTitle: 'RECUERDOS DE KEZNIT',
-      memGot: 'RECUERDO', boss: 'JEFE', fullscreen: 'PANTALLA COMPLETA', controls: 'CONTROLES',
+      memGot: 'RECUERDO', boss: 'JEFE', fullscreen: 'PANTALLA COMPLETA', controls: 'CONTROLES', exit: 'VOLVER A LA WEB', rotate: 'GIRA EL MÓVIL PARA VERLO MÁS GRANDE',
       help: ['←→ · A D   MOVERSE', 'W · ↑ · ESPACIO   SALTAR (mantén = más alto)', 'PÉGATE A UNA PARED + SALTAR   SALTO DE PARED', '↓ · S   BAJAR DE PLATAFORMAS FINAS', 'R   REINICIAR NIVEL · ESC   PAUSA'],
       remake: 'REMAKE', end: 'FIN', stats: 'TU PARTIDA',
     },
@@ -36,7 +36,7 @@
       voice: 'ABYSS RECEPTION', soldier: 'SOUL NO. 4,816,301', menuHint: '↑↓ SELECT · ENTER ACCEPT · ESC BACK',
       optHint: '←→ CHANGE · ESC BACK', skip: 'ESC · SKIP', next: 'SPACE', thanks: 'Thank you for not giving up.',
       locked: 'LOCKED', best: 'BEST', memEmpty: 'Lost memory. Find it in level', memTitle: "KEZNIT'S MEMORIES",
-      memGot: 'MEMORY', boss: 'BOSS', fullscreen: 'FULLSCREEN', controls: 'CONTROLS',
+      memGot: 'MEMORY', boss: 'BOSS', fullscreen: 'FULLSCREEN', controls: 'CONTROLS', exit: 'BACK TO SITE', rotate: 'TURN YOUR PHONE FOR A BIGGER VIEW',
       help: ['←→ · A D   MOVE', 'W · ↑ · SPACE   JUMP (hold = higher)', 'HUG A WALL + JUMP   WALL JUMP', '↓ · S   DROP THROUGH THIN PLATFORMS', 'R   RESTART LEVEL · ESC   PAUSE'],
       remake: 'REMAKE', end: 'THE END', stats: 'YOUR RUN',
     },
@@ -54,20 +54,31 @@
   try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s) save = Object.assign(blank(), s, { opts: Object.assign(blank().opts, s.opts) }); } catch (e) { /* sin guardado */ }
   const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* sin guardado */ } };
 
+  // ?from=/pagina/ : de dónde se vino (para el botón de volver a la web en el móvil)
+  const FROM = (() => { const f = new URLSearchParams(location.search).get('from'); return f && /^\/[\w\-\/#]*$/.test(f) ? f : null; })();
+
   // ---------- lienzo ----------
   const cv = document.getElementById('game');
   const ctx = cv.getContext('2d');
   let scale = 1, dpr = 1, offX = 0, offY = 0;
+  const COARSE = matchMedia('(pointer: coarse)').matches;
+  let usingTouch = COARSE;
+  let portrait = false, playing = false;
   function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    scale = Math.min(innerWidth / VW, innerHeight / VH);
+    // en móviles se limita la resolución para que vaya fluido
+    dpr = Math.min(window.devicePixelRatio || 1, COARSE ? 1.5 : 2);
+    portrait = usingTouch && playing && innerHeight > innerWidth * 1.1;
+    scale = portrait ? innerWidth / VW : Math.min(innerWidth / VW, innerHeight / VH);
     const w = Math.round(VW * scale), h = Math.round(VH * scale);
     cv.style.width = w + 'px'; cv.style.height = h + 'px';
-    offX = (innerWidth - w) / 2; offY = (innerHeight - h) / 2;
+    offX = (innerWidth - w) / 2; offY = portrait ? Math.round(Math.max(10, (innerHeight - h) * 0.18)) : (innerHeight - h) / 2;
+    document.body.classList.toggle('portrait', portrait);
     cv.style.left = offX + 'px'; cv.style.top = offY + 'px';
     cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
   }
-  addEventListener('resize', resize); resize();
+  addEventListener('resize', resize);
+  resize();
+  addEventListener('orientationchange', () => setTimeout(resize, 120));
 
   const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
   // viñeta y líneas retro
@@ -91,7 +102,7 @@
     SKA.init();
     if (e.repeat) return;
     for (const a of acts) { held.add(a); pressed.add(a); }
-    usingTouch = false;
+    if (usingTouch) setTouch(false);
   });
   addEventListener('keyup', (e) => { const acts = KEYMAP[e.code]; if (acts) for (const a of acts) held.delete(a); });
   addEventListener('blur', () => { held.clear(); if (scene === play && !play.paused && play.w) openPause(); });
@@ -116,41 +127,82 @@
   const isHeld = (a) => held.has(a) || held.has(a + '#pad') || touchHeld.has(a);
 
   // Táctil y ratón
-  let usingTouch = false;
   const touchHeld = new Set();
-  const touches = new Map();
   const toLogical = (e) => ({ x: (e.clientX - offX) / scale, y: (e.clientY - offY) / scale });
-  const TBTN = {
-    left: { x: 70, y: 470, r: 46 }, right: { x: 180, y: 470, r: 46 }, jump: { x: 880, y: 460, r: 56 }, pause: { x: 920, y: 40, r: 26 },
-  };
-  function touchAt(pt) {
-    for (const k in TBTN) { const b = TBTN[k]; if (Math.hypot(pt.x - b.x, pt.y - b.y) < b.r + 16) return k; }
-    return null;
-  }
   let mouse = { x: -1, y: -1, click: false };
-  cv.addEventListener('pointerdown', (e) => {
+  addEventListener('pointerdown', (e) => {
+    if (e.target.closest && e.target.closest('#pad, #padTop')) return;
     SKA.init();
     const pt = toLogical(e);
-    if (e.pointerType === 'touch') {
-      usingTouch = true;
-      if (scene === play && !play.paused && play.w && !play.cut) {
-        const k = touchAt(pt);
-        if (k) {
-          touches.set(e.pointerId, k);
-          if (k === 'pause') pressed.add('pause');
-          else { touchHeld.add(k); pressed.add(k); }
-          return;
-        }
-      }
-    }
+    if (e.pointerType === 'touch' && !usingTouch) setTouch(true);
     mouse = { x: pt.x, y: pt.y, click: true, down: true };
+    if (tapAdvances()) pressed.add('confirm');
   });
-  const endTouch = (e) => { mouse.down = false; mouse.drag = null; const k = touches.get(e.pointerId); if (k) { touchHeld.delete(k); touches.delete(e.pointerId); } };
+  const endTouch = () => { mouse.down = false; mouse.drag = null; };
   cv.addEventListener('pointerup', endTouch);
   addEventListener('pointerup', () => { mouse.down = false; mouse.drag = null; });
   cv.addEventListener('pointercancel', endTouch);
   cv.addEventListener('pointermove', (e) => { const pt = toLogical(e); mouse.x = pt.x; mouse.y = pt.y; mouse.moved = true; });
   cv.addEventListener('wheel', (e) => { mouse.wheel = (mouse.wheel || 0) + Math.sign(e.deltaY); if (scene === optionsScene) e.preventDefault(); }, { passive: false });
+
+  // Escenas sin menú en las que un toque (o clic) sirve para avanzar
+  function tapAdvances() {
+    if (scene === play) return !!play.cut && !play.paused;
+    return scene === storyScene || scene === cardScene || scene === finaleScene || scene === statsScene;
+  }
+
+  // ---------- controles táctiles ----------
+  // Botones de verdad (HTML) por encima del juego: se puede deslizar el dedo de uno a otro.
+  const ico = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
+  const pad = document.createElement('div');
+  pad.id = 'pad'; pad.hidden = true;
+  pad.innerHTML = `<div class="pd-move"><button data-k="left" aria-label="Izquierda">${ico('M15 5 7 12l8 7z')}</button><button data-k="right" aria-label="Derecha">${ico('M9 5l8 7-8 7z')}</button></div>
+    <button class="pd-down" data-k="down" aria-label="Bajar">${ico('M5 9h14l-7 8z')}</button>
+    <button class="pd-jump" data-k="jump" aria-label="Saltar">${ico('M12 5l8 11H4z')}</button>`;
+  const topBtn = document.createElement('button');
+  topBtn.id = 'padTop'; topBtn.hidden = true; topBtn.setAttribute('aria-label', 'Pausa');
+  const rotHint = document.createElement('p');
+  rotHint.id = 'rotHint'; rotHint.hidden = true;
+  document.body.append(pad, topBtn, rotHint);
+  document.body.classList.toggle('touch', usingTouch);
+  const padPtr = new Map();
+  const keyAt = (x, y) => { const el = document.elementFromPoint(x, y); const b = el && el.closest && el.closest('#pad [data-k]'); return b ? b.dataset.k : null; };
+  function setKey(id, k) {
+    const old = padPtr.get(id) || null;
+    if (old === k) return;
+    if (k) padPtr.set(id, k); else padPtr.delete(id);
+    if (old && ![...padPtr.values()].includes(old)) touchHeld.delete(old);
+    if (k && !touchHeld.has(k)) { touchHeld.add(k); pressed.add(k); if (k === 'jump' && navigator.vibrate) navigator.vibrate(8); }
+    pad.querySelectorAll('[data-k]').forEach(b => b.classList.toggle('on', touchHeld.has(b.dataset.k)));
+  }
+  pad.addEventListener('pointerdown', (e) => { e.preventDefault(); SKA.init(); if (!usingTouch) setTouch(true); setKey(e.pointerId, keyAt(e.clientX, e.clientY)); });
+  pad.addEventListener('pointermove', (e) => { if (padPtr.has(e.pointerId)) setKey(e.pointerId, keyAt(e.clientX, e.clientY)); });
+  for (const ev of ['pointerup', 'pointercancel']) pad.addEventListener(ev, (e) => setKey(e.pointerId, null));
+  pad.addEventListener('contextmenu', (e) => e.preventDefault());
+  topBtn.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); SKA.init();
+    pressed.add(scene === play && !play.paused && !play.cut ? 'pause' : 'back');
+  });
+  function setTouch(on) {
+    usingTouch = on;
+    document.body.classList.toggle('touch', on);
+    if (!on) { touchHeld.clear(); padPtr.clear(); }
+    resize();
+  }
+  // Se decide cada fotograma qué se ve
+  let padShown = null, topShown = null, rotShown = null;
+  function updateTouchUi() {
+    const inPlay = scene === play && play.w && !play.paused && !play.cut && !play.surrender && !play.w.done;
+    const showPad = usingTouch && !!inPlay;
+    const nowPlaying = scene === play;
+    if (nowPlaying !== playing) { playing = nowPlaying; resize(); }
+    if (showPad !== padShown) { pad.hidden = !showPad; padShown = showPad; if (!showPad) { touchHeld.clear(); padPtr.clear(); } }
+    const showTop = usingTouch && scene !== boot && scene !== titleScene && !(scene === finaleScene && !finaleScene.o.skippable);
+    if (showTop !== topShown) { topBtn.hidden = !showTop; topShown = showTop; }
+    if (showTop) { const p = scene === play && !play.paused && !play.cut; const label = p ? '❚❚' : '✕'; if (topBtn.textContent !== label) topBtn.textContent = label; }
+    const showRot = usingTouch && portrait && !!inPlay;
+    if (showRot !== rotShown) { rotHint.hidden = !showRot; rotShown = showRot; rotHint.textContent = ui('rotate'); }
+  }
 
   // ---------- partículas y efectos ----------
   let parts = [];
@@ -230,7 +282,8 @@
     ctx.restore();
   }
   const fmtTime = (f) => { const s = Math.floor(f / 60); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
-  function glow(color, blur) { ctx.shadowColor = color; ctx.shadowBlur = blur; }
+  let lowFx = false;
+  function glow(color, blur) { if (lowFx) return; ctx.shadowColor = color; ctx.shadowBlur = blur; }
   function noGlow() { ctx.shadowBlur = 0; }
 
   // ---------- capas estáticas del nivel ----------
@@ -370,13 +423,15 @@
         { label: ui('memories'), act: () => go(memScene) },
         { label: ui('options'), act: () => go(optionsScene) },
         { label: ui('credits'), act: () => go(creditsScene) },
-      ];
+      ].concat(FROM ? [{ label: ui('exit'), act: () => { location.href = FROM; } }] : []);
     },
     update() {
       this.t++;
       if (this.confirm) {
         if (pressed.has('left') || pressed.has('right') || pressed.has('up') || pressed.has('down')) { this.csel ^= 1; SKA.sfx('move'); }
         if (pressed.has('back')) { this.confirm = false; SKA.sfx('back'); }
+        if (mouse.click && mouse.y > 290 && mouse.y < 370) { this.csel = mouse.x < VW / 2 ? 0 : 1; pressed.add('confirm'); mouse.click = false; }
+        else if (mouse.click) { this.confirm = false; mouse.click = false; SKA.sfx('back'); }
         if (pressed.has('confirm')) { SKA.sfx('select'); if (this.csel === 0) { const l = save.lang, o = save.opts; save = blank(); save.lang = l; save.opts = o; persist(); newGame(); } this.confirm = false; }
         return;
       }
@@ -405,7 +460,7 @@
       text('SOUL KEZNIT', VW / 2 - gl * 0.5, 118, 84, '#fff');
       ctx.fillStyle = COL.red; ctx.fillRect(VW / 2 - 250, 170, 500, 4);
       text(ui('remake'), VW / 2, 196, 22, 'rgba(255,255,255,.7)');
-      if (this._items) drawMenu(this, this._items, VW / 2, 262, 38, 22);
+      if (this._items) { const many = this._items.length > 6; drawMenu(this, this._items, VW / 2, many ? 246 : 262, many ? 34 : 38, many ? 20 : 22); }
       text('R3K1 · TheKittyBoyfriend', 20, VH - 18, 13, 'rgba(255,255,255,.35)', 'left');
       text(ui('menuHint'), VW - 20, VH - 18, 13, 'rgba(255,255,255,.35)', 'right');
       if (this.confirm) {
@@ -460,6 +515,11 @@
       text(ui('optHint'), VW / 2, VH - 24, 13, 'rgba(255,255,255,.35)');
     },
   };
+  function goFullscreen() {
+    const d = document, el = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement || matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches) return;
+    try { const r = (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el); if (r && r.catch) r.catch(() => {}); } catch (e) { /* no se puede */ }
+  }
   function toggleFullscreen() {
     const d = document, el = d.documentElement;
     if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d);
@@ -962,6 +1022,7 @@
     updateSurrender() {
       const s = this.surrender; s.t++;
       if (s.phase === 'ask') {
+        if (mouse.click && mouse.y > 280 && mouse.y < 370) { s.sel = mouse.x < VW / 2 ? 0 : 1; pressed.add('confirm'); mouse.click = false; }
         if (pressed.has('left') || pressed.has('right') || pressed.has('up') || pressed.has('down')) { s.sel ^= 1; SKA.sfx('move'); }
         if (pressed.has('confirm') || pressed.has('jump')) {
           if (s.sel === 0) { s.phase = 'glitch'; s.t = 0; SKA.sfx('bonk'); }
@@ -970,7 +1031,7 @@
       } else if (s.phase === 'glitch') {
         if (s.t % 6 === 0) SKA.sfx('blip');
         if (s.t > 50) { s.phase = 'answer'; s.t = 0; s.sel = 1; }
-      } else if (s.phase === 'answer' && (s.t > 150 || (s.t > 30 && (pressed.has('confirm') || pressed.has('jump'))))) this.surrender = null;
+      } else if (s.phase === 'answer' && (s.t > 150 || (s.t > 30 && (pressed.has('confirm') || pressed.has('jump') || mouse.click)))) this.surrender = null;
     },
 
     // ---------------- dibujo ----------------
@@ -1004,7 +1065,6 @@
       if (flash > 0) { ctx.globalAlpha = flash; ctx.fillStyle = flashCol; ctx.fillRect(0, 0, VW, VH); ctx.globalAlpha = 1; }
       if (this.wipe) this.drawWipe();
       this.drawHud();
-      if (usingTouch && !this.cut && !this.paused) this.drawTouch();
       if (this.surrender) this.drawSurrender();
       if (this.paused) this.drawPause();
     },
@@ -1488,16 +1548,6 @@
         text(['I', 'II', 'III'][k], sx + seg / 2, y + 22, 11, k === part ? '#fff' : 'rgba(255,255,255,.3)', 'center', 'px', this.barShow);
       }
     },
-    drawTouch() {
-      for (const k in TBTN) {
-        const b = TBTN[k], on = touchHeld.has(k);
-        ctx.globalAlpha = on ? 0.35 : 0.16; ctx.fillStyle = '#fff';
-        ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
-        ctx.globalAlpha = 0.7;
-        text(k === 'left' ? '◀' : k === 'right' ? '▶' : k === 'jump' ? '▲' : 'II', b.x, b.y + 2, k === 'pause' ? 16 : 28, '#fff');
-        ctx.globalAlpha = 1;
-      }
-    },
     drawPause() {
       ctx.fillStyle = 'rgba(0,0,0,.78)'; ctx.fillRect(0, 0, VW, VH);
       text(ui('paused'), VW / 2, 110, 48, '#fff');
@@ -1758,6 +1808,11 @@
       acc -= stepMs; n++;
     }
     if (n === 4) acc = 0;
+    updateTouchUi();
+    // si el dispositivo va justo, se quitan los brillos (lo más caro de dibujar)
+    const dt = now - (frame.prev || now); frame.prev = now;
+    frame.avg = (frame.avg || 16) * 0.95 + Math.min(dt, 100) * 0.05;
+    if (!lowFx && frame.avg > 24 && clock > 240) lowFx = true;
     ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
     ctx.imageSmoothingEnabled = true;
     scene.draw();
@@ -1773,7 +1828,7 @@
   const fontsReady = document.fonts ? document.fonts.load(PX(20)).catch(() => {}) : Promise.resolve();
   const boot = {
     t: 0,
-    update() { this.t++; if (pressed.has('confirm') || pressed.has('jump') || mouse.click) { SKA.init(); SKA.sfx('select'); if (save.lang) go(titleScene); else go(langScene, 'title'); } },
+    update() { this.t++; if (pressed.has('confirm') || pressed.has('jump') || mouse.click) { SKA.init(); SKA.sfx('select'); if (usingTouch) goFullscreen(); if (save.lang) go(titleScene); else go(langScene, 'title'); } },
     draw() {
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, VH);
       glow('rgba(255,255,255,.8)', 24); ctx.fillStyle = '#fff';
@@ -1783,7 +1838,7 @@
       text('SOUL KEZNIT', VW / 2, 150, 44, '#fff');
       text('REMAKE', VW / 2, 190, 16, 'rgba(255,255,255,.5)');
       const bl = (Math.floor(this.t / 30) % 2) ? 0.8 : 0.35;
-      text(save.lang === 'en' ? 'PRESS SPACE OR CLICK' : 'PULSA ESPACIO O HAZ CLIC', VW / 2, 360, 18, `rgba(255,255,255,${bl})`);
+      text(usingTouch ? (save.lang === 'en' ? 'TAP THE SCREEN' : 'TOCA LA PANTALLA') : save.lang === 'en' ? 'PRESS SPACE OR CLICK' : 'PULSA ESPACIO O HAZ CLIC', VW / 2, 360, 18, `rgba(255,255,255,${bl})`);
     },
   };
   fontsReady.then(() => { scene = boot; requestAnimationFrame(frame); });

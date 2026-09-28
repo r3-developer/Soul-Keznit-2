@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -8,69 +8,92 @@
 <meta property="og:title" content="R3K1 · Juegos">
 <meta property="og:description" content="Juegos oscuros, difíciles y con alma. Juega a la saga Soul Keznit.">
 <meta property="og:image" content="/img/sk2/portada.svg">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000">
 <link rel="icon" href="/img/sk2/emblema.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=EB+Garamond:ital@1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/cinzel.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css">
 <style>
 /* ---------- Hero ---------- */
-.hero{min-height:100svh;display:grid;place-items:center;text-align:center;padding:120px 0 80px;overflow:hidden}
-.hero-inner{transform:scale(calc(1 - var(--scroll,0) * .12));opacity:calc(1 - var(--scroll,0) * 1.2);will-change:transform,opacity}
-.glow{position:absolute;inset:-20% -10% auto;height:120%;pointer-events:none;z-index:-1;filter:blur(80px);opacity:.55}
-.glow i{position:absolute;border-radius:50%;animation:float 18s ease-in-out infinite alternate}
-.glow i:nth-child(1){width:46vmax;height:46vmax;left:10%;top:0;background:radial-gradient(circle,#ff375f 0,transparent 65%)}
-.glow i:nth-child(2){width:40vmax;height:40vmax;right:5%;top:10%;background:radial-gradient(circle,#bf5af2 0,transparent 65%);animation-delay:-6s}
-.glow i:nth-child(3){width:34vmax;height:34vmax;left:35%;top:30%;background:radial-gradient(circle,#e5243b 0,transparent 65%);animation-delay:-12s}
-@media (prefers-color-scheme: light){:root:not([data-theme="dark"]) .glow{opacity:.22}}
-@keyframes float{0%{transform:translate(0,0) scale(1)}50%{transform:translate(6vw,-4vh) scale(1.1)}100%{transform:translate(-5vw,5vh) scale(.95)}}
-.avatar{width:84px;height:84px;margin:0 auto 26px;border-radius:50%;background:#111;padding:6px;
-  box-shadow:0 0 0 1px rgba(255,255,255,.08),0 10px 40px rgba(229,36,59,.35)}
-.hero h1{font-size:clamp(88px,22vw,240px);font-weight:800;letter-spacing:-.06em;line-height:.9}
-.hero .aka{margin-top:22px;font-size:clamp(19px,2.4vw,26px);font-weight:600;letter-spacing:-.02em}
+.hero{min-height:100svh;display:grid;place-items:center;text-align:center;padding:120px 0 90px;overflow:hidden;isolation:isolate;
+  background:radial-gradient(ellipse at 50% 120%,rgba(229,36,59,.28),transparent 60%),#000}
+.hero .embers{position:absolute;inset:0;width:100%;height:100%;z-index:-1}
+.hero::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(600px circle at var(--mx,50%) var(--my,40%),rgba(229,36,59,.18),transparent 60%)}
+.hero-inner{transform:translateY(calc(var(--scroll,0) * 90px)) scale(calc(1 - var(--scroll,0) * .1));opacity:calc(1 - var(--scroll,0) * 1.3);will-change:transform,opacity}
+.avatar{width:92px;height:92px;margin:0 auto 28px;border-radius:50%;background:#111;padding:7px;animation:float 6s ease-in-out infinite;
+  box-shadow:0 0 0 1px rgba(255,255,255,.08),0 10px 50px rgba(229,36,59,.5)}
+@keyframes float{50%{transform:translateY(-10px)}}
+.hero h1{font-size:clamp(96px,23vw,250px);font-weight:800;letter-spacing:-.06em;line-height:.9;filter:drop-shadow(0 10px 60px rgba(229,36,59,.35))}
+.hero .aka{margin-top:24px;font-size:clamp(19px,2.4vw,26px);font-weight:600;letter-spacing:-.02em}
 .hero .aka span{color:var(--text-2);font-weight:500}
 .hero .lead{max-width:620px;margin:14px auto 0}
-.scroll-cue{position:absolute;left:50%;bottom:28px;width:24px;height:38px;margin-left:-12px;border-radius:12px;border:2px solid var(--text-2);opacity:.5}
+.scroll-cue{position:absolute;left:50%;bottom:28px;width:24px;height:38px;margin-left:-12px;border-radius:12px;border:2px solid var(--text-2);opacity:.45}
 .scroll-cue::after{content:"";position:absolute;left:50%;top:7px;width:4px;height:8px;margin-left:-2px;border-radius:2px;background:var(--text-2);animation:cue 1.8s var(--ease) infinite}
 @keyframes cue{0%{transform:translateY(0);opacity:1}70%{transform:translateY(12px);opacity:0}100%{opacity:0}}
 
+/* ---------- Banda en movimiento ---------- */
+.marquee{overflow:hidden;border-block:1px solid var(--line);background:#050506;padding:18px 0;
+  -webkit-mask:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.marquee div{display:flex;gap:44px;width:max-content;animation:marquee 38s linear infinite;font-family:var(--display);font-size:clamp(18px,2.2vw,26px);letter-spacing:.14em;color:#8e8e93;white-space:nowrap}
+.marquee b{color:var(--red);font-weight:700}
+@keyframes marquee{to{transform:translateX(-50%)}}
+
 /* ---------- Saga ---------- */
-.saga{background:#000;color:#f5f5f7;overflow:hidden;--text:#f5f5f7;--text-2:#a1a1a6;--tile:#111113;--accent:#e5243b;--accent-text:#ff5a6e}
-.saga .cover{position:relative;max-width:900px;margin:0 auto;border-radius:32px;overflow:hidden;
-  box-shadow:0 40px 120px rgba(229,36,59,.25)}
-.saga .cover img{width:100%;animation:kenburns 24s ease-in-out infinite alternate}
+.saga{overflow:hidden}
+.saga .cover{position:relative;max-width:900px;margin:0 auto;border-radius:32px;overflow:hidden;box-shadow:0 40px 140px rgba(229,36,59,.3)}
+.saga .cover img{width:100%;height:auto;animation:kenburns 24s ease-in-out infinite alternate}
 @keyframes kenburns{from{transform:scale(1)}to{transform:scale(1.08) translateY(-1.5%)}}
 .saga .cover::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55),transparent 40%)}
-.saga h2 .display{display:block;font-size:.62em;color:#e5243b;margin-bottom:10px;letter-spacing:.14em}
-.chapters{margin-top:clamp(56px,8vw,96px)}
-.chapter{padding:34px 30px 30px;display:flex;flex-direction:column;min-height:420px;background:#111113}
-.chapter .num{font-family:var(--display);font-size:64px;line-height:1;color:#e5243b;opacity:.9}
-.chapter h3{margin-top:18px;font-size:28px;font-weight:700;letter-spacing:-.02em}
-.chapter p{margin-top:10px;color:#a1a1a6}
-.chapter .art{margin:22px -30px 0;flex:1;display:grid;place-items:center;overflow:hidden;min-height:150px}
-.chapter .art img{width:100%;height:100%;object-fit:cover;transition:transform 1s var(--ease)}
-.chapter:hover .art img{transform:scale(1.05)}
-.chapter .go{margin-top:22px;display:flex;gap:18px;flex-wrap:wrap;font-size:15px}
-.chapter.soon .art{background:radial-gradient(circle at 50% 60%,rgba(229,36,59,.35),transparent 60%)}
-.chapter.soon .art b{font-family:var(--display);font-size:120px;color:#fff;text-shadow:0 0 40px rgba(229,36,59,.9);animation:pulse 3s ease-in-out infinite}
+.saga h2 .display{display:block;font-size:.62em;color:var(--red);margin-bottom:10px;letter-spacing:.14em}
+.parts{margin-top:clamp(56px,8vw,96px)}
+.part{padding:34px 30px 30px;display:flex;flex-direction:column;min-height:440px;background:#111113}
+.part .num{font-family:var(--display);font-size:64px;line-height:1;color:var(--red)}
+.part h3{margin-top:18px;font-size:28px;font-weight:700;letter-spacing:-.02em}
+.part p{margin-top:10px;color:var(--text-2)}
+.part .art{margin:22px -30px 0;flex:1;display:grid;place-items:center;overflow:hidden;min-height:160px}
+.part .art img{width:100%;height:100%;object-fit:cover;transition:transform 1s var(--ease)}
+.part:hover .art img{transform:scale(1.06)}
+.part .go{margin-top:22px;display:flex;gap:18px;flex-wrap:wrap;font-size:15px}
+.part.soon .art{background:radial-gradient(circle at 50% 60%,rgba(229,36,59,.35),transparent 60%)}
+.part.soon .art b{font-family:var(--display);font-size:120px;color:#fff;text-shadow:0 0 40px rgba(229,36,59,.9);animation:pulse 3s ease-in-out infinite}
 @keyframes pulse{50%{text-shadow:0 0 80px rgba(229,36,59,1),0 0 10px #ff375f;opacity:.85}}
 .badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:980px;background:rgba(229,36,59,.16);color:#ff5a6e;align-self:flex-start}
 
+/* ---------- Juega donde quieras ---------- */
+.anywhere{display:grid;grid-template-columns:1.1fr 1fr;gap:clamp(32px,6vw,80px);align-items:center}
+.phone{position:relative;margin:0 auto;width:min(100%,560px);aspect-ratio:19.5/9;border-radius:38px;padding:12px;background:#1c1c1e;
+  box-shadow:0 0 0 1px rgba(255,255,255,.1),0 40px 120px rgba(229,36,59,.25);transform:perspective(1200px) rotateY(-12deg) rotateX(6deg);transition:transform 1s var(--ease)}
+.phone:hover{transform:perspective(1200px) rotateY(-4deg) rotateX(2deg)}
+.phone .scr{position:relative;height:100%;border-radius:28px;overflow:hidden;background:#000}
+.phone .scr img{width:100%;height:100%;object-fit:cover}
+.phone .btn-t{position:absolute;bottom:9%;width:15%;aspect-ratio:1;border-radius:50%;border:1.5px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);display:grid;place-items:center}
+.phone .btn-t svg{width:40%;fill:rgba(255,255,255,.85)}
+.phone .btn-t.l{left:4%}.phone .btn-t.r{left:21%}.phone .btn-t.j{right:4%;width:18%;background:rgba(229,36,59,.55);border-color:#ff5a6e}
+.phone .btn-t.j{animation:tap 1.6s ease-in-out infinite}
+@keyframes tap{0%,60%,100%{transform:none}70%{transform:scale(.9);background:rgba(255,52,52,.8)}}
+.ways{display:grid;gap:14px;margin-top:28px}
+.way{display:flex;gap:16px;align-items:flex-start;padding:18px 20px;border-radius:20px;background:var(--tile)}
+.way .ic{flex:none;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:rgba(229,36,59,.14);color:#ff5a6e}
+.way .ic svg{width:22px;height:22px;fill:currentColor}
+.way b{display:block;font-size:17px}
+.way span{color:var(--text-2);font-size:15px}
+@media (max-width:860px){.anywhere{grid-template-columns:1fr}.phone{transform:none}}
+
 /* ---------- Juegos ---------- */
-.games .tile{display:block;color:var(--text);padding:40px 36px 0;min-height:480px;text-align:center}
+.games .tile{display:block;color:var(--text);padding:40px 36px 0;min-height:480px;text-align:center;background:#0e0e10}
 .games .tile:hover{text-decoration:none}
 .games .tile h3{font-size:clamp(28px,3.4vw,40px);font-weight:700;letter-spacing:-.03em}
 .games .tile p{margin-top:6px;color:var(--text-2);font-size:19px}
 .games .tile .more{display:inline-block;margin-top:14px;color:var(--accent-text)}
-.games .tile .shot{margin:30px auto 0;max-width:420px;border-radius:18px 18px 0 0;overflow:hidden;box-shadow:0 -10px 50px rgba(0,0,0,.25);transition:transform .8s var(--ease)}
-.games .tile:hover .shot{transform:translateY(-8px)}
-.games .tile.dark{background:#000;color:#f5f5f7;--text:#f5f5f7;--text-2:#a1a1a6;--accent-text:#2997ff}
+.games .tile .shot{margin:30px auto 0;max-width:440px;border-radius:18px 18px 0 0;overflow:hidden;box-shadow:0 -10px 60px rgba(229,36,59,.18);transition:transform .8s var(--ease)}
+.games .tile .shot img{width:100%;height:auto}
+.games .tile:hover .shot{transform:translateY(-10px)}
 .games .tile.next{display:grid;place-items:center;align-content:center;gap:10px;border:2px dashed var(--line);background:transparent}
 .games .tile.next .q{font-size:96px;font-weight:800;letter-spacing:-.05em;color:var(--line);line-height:1}
 .chips{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px}
-.chip{font-size:12px;padding:4px 10px;border-radius:980px;background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--text-2)}
+.chip{font-size:12px;padding:4px 10px;border-radius:980px;background:rgba(255,255,255,.08);color:var(--text-2)}
+.chip.hot{background:rgba(229,36,59,.18);color:#ff5a6e}
 
 /* ---------- Sobre mí ---------- */
 .about{display:grid;grid-template-columns:1.1fr 1fr;gap:clamp(32px,6vw,80px);align-items:center}
@@ -79,7 +102,7 @@
 .ids{display:grid;gap:16px}
 .id{padding:26px 28px;display:flex;align-items:center;gap:18px;background:var(--tile)}
 .id .ic{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;font-weight:800;font-size:18px;flex:none}
-.id .ic.r{background:linear-gradient(135deg,#ff375f,#bf5af2);color:#fff;letter-spacing:-.02em}
+.id .ic.r{background:linear-gradient(135deg,#ff375f,#e5243b 60%,#7a0f1c);color:#fff;letter-spacing:-.02em}
 .id .ic.k{background:#111;padding:6px}
 .id small{display:block;color:var(--text-2);font-size:13px}
 .id b{font-size:22px;letter-spacing:-.02em}
@@ -101,20 +124,25 @@
 
 <main>
   <!-- Hero -->
-  <section class="hero" aria-labelledby="titulo">
-    <div class="glow" aria-hidden="true"><i></i><i></i><i></i></div>
+  <section class="hero" aria-labelledby="titulo" data-spot>
+    <canvas class="embers" aria-hidden="true"></canvas>
     <div class="hero-inner wrap">
-      <img class="avatar fade-up" style="--delay:.05s" src="/img/sk2/emblema.svg" alt="">
+      <img class="avatar fade-up" style="--delay:.05s" src="/img/sk2/emblema.svg" alt="" width="92" height="92">
       <h1 id="titulo" class="grad" data-letters>R3K1</h1>
       <p class="aka fade-up" style="--delay:.7s">Desarrollador de videojuegos. <span>También conocido como TheKittyBoyfriend.</span></p>
-      <p class="lead fade-up" style="--delay:.85s">Juegos oscuros, difíciles y con alma. Hechos a mano, uno a uno.</p>
+      <p class="lead fade-up" style="--delay:.85s">Juegos oscuros, difíciles y con alma. Hechos a mano, uno a uno. Se juegan aquí, en el navegador y en el móvil.</p>
       <div class="ctas fade-up" style="--delay:1s">
-        <a class="btn" href="#juegos">Ver los juegos</a>
-        <a class="link-arrow" href="/soul-keznit-2/#jugar">Jugar a Soul Keznit 2</a>
+        <a class="btn" href="/soul-keznit/#jugar">Jugar ahora</a>
+        <a class="link-arrow" href="#saga">Conocer la saga</a>
       </div>
     </div>
     <span class="scroll-cue" aria-hidden="true"></span>
   </section>
+
+  <div class="marquee" aria-hidden="true"><div>
+    <span>NUNCA TE RINDAS</span><b>✦</b><span>PLATAFORMAS</span><b>✦</b><span>JEFES CON HISTORIA</span><b>✦</b><span>EL ALMA NUNCA SE RINDE</span><b>✦</b><span>EN EL NAVEGADOR</span><b>✦</b><span>EN EL MÓVIL</span><b>✦</b>
+    <span>NUNCA TE RINDAS</span><b>✦</b><span>PLATAFORMAS</span><b>✦</b><span>JEFES CON HISTORIA</span><b>✦</b><span>EL ALMA NUNCA SE RINDE</span><b>✦</b><span>EN EL NAVEGADOR</span><b>✦</b><span>EN EL MÓVIL</span><b>✦</b>
+  </div></div>
 
   <!-- Frase -->
   <section class="sec">
@@ -124,32 +152,32 @@
   </section>
 
   <!-- Saga Soul Keznit -->
-  <section class="sec saga" id="saga" aria-labelledby="saga-t">
+  <section class="sec saga alt" id="saga" aria-labelledby="saga-t">
     <div class="wrap">
       <div class="sec-head">
         <h2 id="saga-t" class="h-lg reveal"><span class="display">Soul Keznit</span>Un alma. Un abismo.<br>Tres juegos.</h2>
         <p class="lead reveal" data-d="1">Keznit murió defendiendo a los suyos. Entregó su alma a cambio de sus vidas y lo arrastraron al abismo… pero nunca se arrodilló.</p>
       </div>
       <a class="cover reveal zoom" href="/soul-keznit-2/" style="display:block" aria-label="Soul Keznit 2">
-        <img src="/img/sk2/portada.svg" alt="Portada de Soul Keznit 2: dos manos encadenadas sujetan un alma blanca">
+        <img src="/img/sk2/portada.svg" alt="Portada de Soul Keznit 2: dos manos encadenadas sujetan un alma blanca" width="960" height="720" decoding="async">
       </a>
 
-      <div class="chapters grid g3">
-        <article class="card chapter lift reveal" data-d="1">
+      <div class="parts grid g3">
+        <article class="card part lift reveal" data-d="1" data-tilt>
           <span class="num">I</span>
           <h3>Soul Keznit</h3>
-          <p>La llegada al abismo. Ahora, como remake: 13 niveles y un jefe.</p>
-          <div class="art"><img src="/img/sk1r/titulo.jpg" alt="" loading="lazy"></div>
+          <p>La llegada al abismo. Rehecho desde cero: 13 niveles, un jefe en tres fases y un final nuevo.</p>
+          <div class="art"><img src="/img/sk1r/titulo.jpg" alt="" loading="lazy" decoding="async" width="960" height="540"></div>
           <div class="go"><a class="link-arrow" href="/soul-keznit/">Saber más</a><a class="link-arrow" href="/soul-keznit/#jugar">Jugar</a></div>
         </article>
-        <article class="card chapter lift reveal" data-d="2">
+        <article class="card part lift reveal" data-d="2" data-tilt>
           <span class="num">II</span>
           <h3>Soul Keznit 2</h3>
-          <p>24 niveles, 5 jefes y una historia. El alma nunca se rinde.</p>
-          <div class="art"><img src="/img/sk2/titulo.svg" alt="" loading="lazy"></div>
+          <p>24 niveles, 5 jefes y el trato que lo empezó todo. El alma nunca se rinde.</p>
+          <div class="art"><img src="/img/sk2/titulo.svg" alt="" loading="lazy" decoding="async"></div>
           <div class="go"><a class="link-arrow" href="/soul-keznit-2/">Saber más</a><a class="link-arrow" href="/soul-keznit-2/#jugar">Jugar</a></div>
         </article>
-        <article class="card chapter soon lift reveal" data-d="3">
+        <article class="card part soon lift reveal" data-d="3" data-tilt>
           <span class="badge">En desarrollo</span>
           <h3>Soul Keznit 3</h3>
           <p>Esta vez, fuera de Scratch. Hecho para la web desde cero.</p>
@@ -160,29 +188,51 @@
     </div>
   </section>
 
+  <!-- Juega donde quieras -->
+  <section class="sec" aria-labelledby="donde-t">
+    <div class="wrap anywhere">
+      <div class="reveal">
+        <p class="eyebrow">Juega donde quieras</p>
+        <h2 id="donde-t" class="h-md" style="margin-top:10px">Ahora también<br>en el móvil.</h2>
+        <p class="lead" style="margin-top:18px">El remake de Soul Keznit se juega con el dedo: botones táctiles de verdad, pantalla completa y tu partida guardada.</p>
+        <div class="ways">
+          <div class="way"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm0 3v13h10V5H7zm5 14.2a1 1 0 1 0 0 .01z"/></svg></span><div><b>Móvil y tableta</b><span>Gira el móvil y juega a pantalla completa. Puedes añadirlo a la pantalla de inicio como una app.</span></div></div>
+          <div class="way"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 6h20v12H2zm3 3v2h2V9zm4 0v2h2V9zm4 0v2h2V9zm4 0v2h2V9zM6 13v2h12v-2z"/></svg></span><div><b>Teclado</b><span>A D o flechas para moverte, W o espacio para saltar.</span></div></div>
+          <div class="way"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10a5 5 0 0 1 4.9 6l-.8 4a2.5 2.5 0 0 1-4.3 1.2L15 16H9l-1.8 2.2A2.5 2.5 0 0 1 2.9 17l-.8-4A5 5 0 0 1 7 7zm0 3v1.5H5.5V13H7v1.5h1.5V13H10v-1.5H8.5V10zm9 .5a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm2 2a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/></svg></span><div><b>Mando</b><span>Conéctalo y listo.</span></div></div>
+        </div>
+        <div class="ctas" style="justify-content:flex-start"><a class="btn" href="/soul-keznit/#jugar">Jugar al remake</a></div>
+      </div>
+      <div class="phone reveal zoom" data-d="1" aria-hidden="true">
+        <div class="scr"><img src="/img/sk1r/nivel-2-5.jpg" alt="" loading="lazy" decoding="async" width="960" height="540">
+          <span class="btn-t l"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 7 12l8 7z"/></svg></span><span class="btn-t r"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l8 7-8 7z"/></svg></span><span class="btn-t j"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l8 11H4z"/></svg></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Juegos -->
-  <section class="sec games" id="juegos" aria-labelledby="juegos-t">
+  <section class="sec games alt" id="juegos" aria-labelledby="juegos-t">
     <div class="wrap">
       <div class="sec-head">
         <h2 id="juegos-t" class="h-lg reveal">Juegos.</h2>
         <p class="lead reveal" data-d="1">Todos se juegan aquí mismo, en el navegador. Sin descargar nada.</p>
       </div>
       <div class="grid g2">
-        <a class="card tile dark lift reveal" href="/soul-keznit-2/">
+        <a class="card tile lift reveal" href="/soul-keznit/" data-tilt>
+          <h3>Soul Keznit</h3>
+          <p>Remake. La llegada al abismo.</p>
+          <div class="chips"><span class="chip hot">Nuevo</span><span class="chip">Plataformas</span><span class="chip">Móvil</span><span class="chip">ES / EN</span></div>
+          <span class="more link-arrow">Jugar ahora</span>
+          <div class="shot"><img src="/img/sk1r/nivel-J-2.jpg" alt="" loading="lazy" decoding="async" width="960" height="540"></div>
+        </a>
+        <a class="card tile lift reveal" data-d="1" href="/soul-keznit-2/" data-tilt>
           <h3>Soul Keznit 2</h3>
           <p>El alma nunca se rinde.</p>
           <div class="chips"><span class="chip">Plataformas</span><span class="chip">Jefes</span><span class="chip">ES / EN</span></div>
           <span class="more link-arrow">Jugar ahora</span>
-          <div class="shot"><img src="/img/sk2/portada.svg" alt="" loading="lazy"></div>
+          <div class="shot"><img src="/img/sk2/portada.svg" alt="" loading="lazy" decoding="async" width="960" height="720"></div>
         </a>
-        <a class="card tile lift reveal" data-d="1" href="/soul-keznit/">
-          <h3>Soul Keznit</h3>
-          <p>Remake. La llegada al abismo.</p>
-          <div class="chips"><span class="chip">Nuevo</span><span class="chip">Plataformas</span><span class="chip">ES / EN</span></div>
-          <span class="more link-arrow">Jugar ahora</span>
-          <div class="shot"><img src="/img/sk1r/nivel-J-2.jpg" alt="" loading="lazy"></div>
-        </a>
-        <a class="card tile dark lift reveal" href="/soul-keznit-3/">
+        <a class="card tile lift reveal" href="/soul-keznit-3/" data-tilt>
           <h3>Soul Keznit 3</h3>
           <p>Próximamente. En la web.</p>
           <div class="chips"><span class="chip">En desarrollo</span></div>
@@ -201,7 +251,7 @@
   </section>
 
   <!-- Sobre mí -->
-  <section class="sec alt" id="sobre-mi" aria-labelledby="sobre-t">
+  <section class="sec" id="sobre-mi" aria-labelledby="sobre-t">
     <div class="wrap about">
       <div class="reveal">
         <p class="eyebrow">Sobre mí</p>
@@ -214,7 +264,7 @@
       </div>
       <div class="ids">
         <div class="card id reveal" data-d="1"><span class="ic r">R3</span><div><small>Nombre de desarrollador</small><b>R3K1</b></div></div>
-        <div class="card id reveal" data-d="2"><span class="ic k"><img src="/img/sk2/emblema.svg" alt=""></span><div><small>En Scratch</small><b>TheKittyBoyfriend</b></div></div>
+        <div class="card id reveal" data-d="2"><span class="ic k"><img src="/img/sk2/emblema.svg" alt="" width="44" height="44"></span><div><small>En Scratch</small><b>TheKittyBoyfriend</b></div></div>
       </div>
     </div>
   </section>
@@ -227,6 +277,6 @@
   </div>
 </footer>
 
-<script src="/assets/site.js"></script>
+<script src="/assets/site.js" defer></script>
 </body>
 </html>

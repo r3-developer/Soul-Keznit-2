@@ -86,7 +86,23 @@
       stage.classList.add('playing');
       player.querySelectorAll('[data-needs-game]').forEach(b => b.disabled = false);
     };
-    start && start.addEventListener('click', load);
+    const coarse = matchMedia('(pointer: coarse)').matches;
+    const touchReady = () => /sk1-remake/.test(player.dataset.src);
+    if (coarse) {
+      const note = document.createElement('p');
+      note.className = 'touch-note';
+      stage.appendChild(note);
+      const upd = () => { note.textContent = touchReady() ? 'Se abre a pantalla completa, con controles táctiles.' : 'Este juego necesita teclado. En el móvil, prueba el remake de Soul Keznit.'; };
+      upd(); new MutationObserver(upd).observe(player, { attributes: true, attributeFilter: ['data-src'] });
+    }
+    start && start.addEventListener('click', (e) => {
+      if (coarse && touchReady()) {
+        e.preventDefault();
+        location.href = `${player.dataset.src}?from=${encodeURIComponent(location.pathname + '#jugar')}`;
+        return;
+      }
+      load();
+    });
     player.querySelector('[data-action="fullscreen"]')?.addEventListener('click', () => {
       load();
       const el = stage;
@@ -157,6 +173,34 @@
     const card = rail.querySelector(':scope > *');
     rail.scrollBy({ left: (+b.dataset.rail) * ((card?.offsetWidth || 360) + 18), behavior: reduce ? 'auto' : 'smooth' });
   }));
+
+  // Barra de progreso de lectura
+  const bar = document.createElement('div');
+  bar.className = 'progress'; bar.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(bar);
+  const setBar = () => { const h = document.documentElement.scrollHeight - innerHeight; bar.style.transform = `scaleX(${h > 0 ? Math.min(1, scrollY / h) : 0})`; };
+  addEventListener('scroll', setBar, { passive: true }); setBar();
+
+  // Luz que sigue al ratón y tarjetas que se inclinan (solo con ratón)
+  const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  if (fine && !reduce) {
+    document.querySelectorAll('[data-spot]').forEach(el => el.addEventListener('pointermove', e => {
+      const r = el.getBoundingClientRect();
+      el.style.setProperty('--mx', `${e.clientX - r.left}px`); el.style.setProperty('--my', `${e.clientY - r.top}px`);
+    }, { passive: true }));
+    document.querySelectorAll('[data-tilt]').forEach(el => {
+      let raf = 0;
+      el.addEventListener('pointermove', e => {
+        const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => {
+          el.style.transform = `perspective(900px) rotateX(${(0.5 - y) * 7}deg) rotateY(${(x - 0.5) * 9}deg) translateY(-4px)`;
+          el.style.setProperty('--mx', `${x * 100}%`); el.style.setProperty('--my', `${y * 100}%`);
+        });
+      }, { passive: true });
+      el.addEventListener('pointerleave', () => { cancelAnimationFrame(raf); el.style.transform = ''; });
+    });
+  }
 
   // Año en el pie
   document.querySelectorAll('[data-year]').forEach(el => el.textContent = new Date().getFullYear());
