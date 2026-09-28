@@ -4,11 +4,19 @@
 
   // Borde de la barra al hacer scroll
   const nav = document.querySelector('.nav');
+  // Todo lo que depende del scroll se calcula una vez por fotograma
+  const scrollJobs = [];
+  let scrollRaf = 0;
+  const onScrollFrame = () => { scrollRaf = 0; scrollJobs.forEach(f => f()); };
+  addEventListener('scroll', () => { if (!scrollRaf) scrollRaf = requestAnimationFrame(onScrollFrame); }, { passive: true });
+  let lastScrollVar = '';
   const onScroll = () => {
     if (nav) nav.classList.toggle('scrolled', scrollY > 8);
-    document.documentElement.style.setProperty('--scroll', Math.min(scrollY / innerHeight, 1.5).toFixed(3));
+    // --scroll solo mueve la portada: pasado el tope no se vuelven a recalcular estilos
+    const v = Math.min(scrollY / innerHeight, 1.5).toFixed(3);
+    if (v !== lastScrollVar) { lastScrollVar = v; document.documentElement.style.setProperty('--scroll', v); }
   };
-  addEventListener('scroll', onScroll, { passive: true });
+  scrollJobs.push(onScroll);
   onScroll();
 
   // Letras del título, una a una
@@ -49,7 +57,7 @@
       words.forEach((w, i) => w.classList.toggle('on', i < n));
     });
   };
-  if (statements.length) { addEventListener('scroll', lightWords, { passive: true }); lightWords(); }
+  if (statements.length) { scrollJobs.push(lightWords); lightWords(); }
 
   // Contadores
   const countIO = new IntersectionObserver(entries => {
@@ -128,17 +136,26 @@
     });
   });
 
-  // Brasas flotando (fondo animado)
+  // Brasas flotando (fondo animado). El brillo va pintado en una imagen: pintar sombras cada fotograma es muy caro.
+  const emberSprite = (() => {
+    const c = document.createElement('canvas'), S = 32;
+    c.width = c.height = S;
+    const g = c.getContext('2d'), gr = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+    gr.addColorStop(0, 'rgba(255,190,150,1)'); gr.addColorStop(0.18, 'rgba(255,110,80,1)');
+    gr.addColorStop(0.4, 'rgba(229,36,59,.45)'); gr.addColorStop(1, 'rgba(229,36,59,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, S, S);
+    return c;
+  })();
   document.querySelectorAll('canvas.embers').forEach(cv => {
     if (reduce) return;
     const ctx = cv.getContext('2d');
-    let w, h, dpr, parts = [];
+    let w, h, dpr, parts = [], raf = 0, visible = false;
     const size = () => {
-      dpr = Math.min(devicePixelRatio || 1, 2);
+      dpr = Math.min(devicePixelRatio || 1, 1.5);
       w = cv.clientWidth; h = cv.clientHeight;
       cv.width = w * dpr; cv.height = h * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const n = Math.round(Math.min(90, w * h / 14000));
+      const n = Math.round(Math.min(70, w * h / 16000));
       parts = Array.from({ length: n }, () => spawn(true));
     };
     const spawn = (any) => ({
@@ -146,25 +163,29 @@
       r: Math.random() * 1.8 + .4, v: Math.random() * .5 + .15,
       d: Math.random() * Math.PI * 2, a: Math.random() * .6 + .25
     });
-    let visible = true;
-    new IntersectionObserver(([e]) => visible = e.isIntersecting).observe(cv);
     const draw = () => {
-      if (visible) {
-        ctx.clearRect(0, 0, w, h);
-        parts.forEach((p, i) => {
-          p.y -= p.v; p.d += .01; p.x += Math.sin(p.d) * .3;
-          if (p.y < -10) parts[i] = spawn(false);
-          const fade = Math.min(1, p.y / (h * .6));
-          ctx.beginPath();
-          ctx.fillStyle = `rgba(255,${70 + p.r * 30 | 0},60,${p.a * fade})`;
-          ctx.shadowColor = 'rgba(229,36,59,.9)'; ctx.shadowBlur = 8;
-          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
-        });
+      raf = 0;
+      if (!visible || document.hidden) return;
+      ctx.clearRect(0, 0, w, h);
+      for (let i = 0; i < parts.length; i++) {
+        const p = parts[i];
+        p.y -= p.v; p.d += .01; p.x += Math.sin(p.d) * .3;
+        if (p.y < -10) parts[i] = spawn(false);
+        const fade = Math.min(1, p.y / (h * .6));
+        if (fade <= 0) continue;
+        ctx.globalAlpha = p.a * fade;
+        const s = p.r * 7;
+        ctx.drawImage(emberSprite, p.x - s / 2, p.y - s / 2, s, s);
       }
-      requestAnimationFrame(draw);
+      ctx.globalAlpha = 1;
+      raf = requestAnimationFrame(draw);
     };
-    addEventListener('resize', size);
-    size(); draw();
+    const start = () => { if (!raf && visible && !document.hidden) raf = requestAnimationFrame(draw); };
+    new IntersectionObserver(([e]) => { visible = e.isIntersecting; start(); }).observe(cv);
+    document.addEventListener('visibilitychange', start);
+    let rt = 0;
+    addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(size, 150); });
+    size();
   });
 
   // Botones del carrusel
@@ -179,7 +200,7 @@
   bar.className = 'progress'; bar.setAttribute('aria-hidden', 'true');
   document.body.appendChild(bar);
   const setBar = () => { const h = document.documentElement.scrollHeight - innerHeight; bar.style.transform = `scaleX(${h > 0 ? Math.min(1, scrollY / h) : 0})`; };
-  addEventListener('scroll', setBar, { passive: true }); setBar();
+  scrollJobs.push(setBar); setBar();
 
   // Luz que sigue al ratón y tarjetas que se inclinan (solo con ratón)
   const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;

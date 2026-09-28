@@ -439,7 +439,7 @@
     voice: [
       { es: 'RELÁJESE. NO DUELE. BUENO, UN POCO.', en: 'RELAX. IT DOES NOT HURT. WELL, A LITTLE.' },
     ],
-    boss: { kind: 'chase', delay0: 62, delay1: 36, ramp: 420, drops: { every: 85, first: 150, tele: 42, lead: 45, height: 260 } },
+    boss: { kind: 'chase', delay0: 62, delay1: 36, ramp: 420, drops: { every: 72, first: 150, tele: 48, lead: 45, height: 260 } },
     map: build(64, 18, ({ put, rect }) => {
       rect(1, 16, 17, 1, '#'); rect(18, 16, 9, 1, 'R'); rect(27, 16, 36, 1, '#');
       put(2, 15, 'P');
@@ -460,7 +460,7 @@
     voice: [
       { es: '¿POR QUÉ SIGUE CORRIENDO? NADIE SIGUE CORRIENDO.', en: 'WHY ARE YOU STILL RUNNING? NOBODY KEEPS RUNNING.' },
     ],
-    boss: { kind: 'mill', every: 150, charge: 200, brakes: [[5, 10], [26, 10], [15, 5]] },
+    boss: { kind: 'mill', every: 150, charge: 200, lock0: 6, lock: [14, 16], brakes: [[5, 10], [26, 10], [15, 5]] },
     map: [
       '################################',
       '#..............................#',
@@ -489,7 +489,7 @@
     voice: [
       { es: '¡ALERTA! LA TRITURADORA SE HA ATASCADO. ¡ALERTA!', en: 'ALERT! THE GRINDER IS JAMMED. ALERT!' },
     ],
-    boss: { kind: 'rise', rise: { speed: 0.48, acc: 0.00014, wait: 130 }, drops: { every: 95, first: 170, tele: 45, lead: 20, height: 220 } },
+    boss: { kind: 'rise', rise: { speed: 0.48, acc: 0.00014, wait: 130 }, drops: { every: 84, first: 170, tele: 48, lead: 20, height: 220 } },
     map: build(32, 36, ({ put, rect }) => {
       rect(1, 34, 30, 1, '#');
       put(15, 33, 'P');

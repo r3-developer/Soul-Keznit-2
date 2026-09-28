@@ -178,6 +178,8 @@
         hits: 0, stun: 0, burst: 150, tele: 0, every: b.every, count: 8, minis: [], brake: 0,
         brakes: b.brakes.map(p => ({ x: p[0] * T, y: p[1] * T })), enter: 90, down: 0, spin: 0.12,
         charge: 0, chargeT: b.charge || 0, aim: null, dash: 0, rage: 0, trail: [],
+        // la palanca siguiente no se puede usar hasta que se recarga (tantos pulsos de música)
+        lock: b.lock0 || 8, lockMax: b.lock0 || 8, lockBeats: b.lock || [14, 16], wave2: false, teleBeats: 0,
       };
     }
     if (b.rise) {
@@ -188,10 +190,11 @@
   }
 
   // Esquirlas que caen del techo: primero un aviso donde va a caer, luego caen
-  function stepDrops(w, p) {
+  function stepDrops(w, p, beat) {
     const d = w.def.boss.drops;
     const pcx = p.x + p.w / 2, pcy = p.y + p.h / 2;
-    if (d && --w.dropT <= 0) {
+    if (d && w.dropT > 0) w.dropT--;
+    if (d && w.dropT <= 0 && beat) {
       w.dropT = d.every;
       // apunta a donde estará el jugador, un poco por delante
       const x = Math.max(T * 1.5, Math.min(w.pw - T * 1.5, pcx + p.vx * (d.lead || 30)));
@@ -199,6 +202,7 @@
       // que no aparezca dentro de un bloque
       while (top < pcy && isSolid(w, Math.floor(x / T), Math.floor(top / T))) top += T;
       w.drops.push({ x, y: top, vy: 0, tele: d.tele || 40, r: 10, rot: 0 });
+      w.events.push({ e: 'dropWarn', x, y: top });
     }
     for (let i = w.drops.length - 1; i >= 0; i--) {
       const s = w.drops[i];
@@ -213,8 +217,11 @@
     return null;
   }
 
-  function stepBoss(w, p) {
+  // beat: en este paso empieza un pulso de la música (si no hay música, uno cada 24 pasos = 150 ppm)
+  function stepBoss(w, p, input) {
     const b = w.boss;
+    const beat = input && input.beat !== undefined && input.beat !== null ? !!input.beat : w.t % 24 === 0;
+    const bf = (input && input.beatLen) || 24;
     const pcx = p.x + p.w / 2, pcy = p.y + p.h / 2;
     const clamp01 = (v) => Math.max(0, Math.min(1, v));
     if (b && b.kind === 'chase') {
@@ -244,15 +251,20 @@
         b.stun--; b.rot += 0.03;
         if (b.stun === 0) {
           if (b.hits >= 3) { b.down = 1; w.events.push({ e: 'bossDown' }); w.done = true; return null; }
+          // se despierta furiosa: la palanca siguiente tarda en recargarse y hay que aguantar mientras
           b.brake++;
-          w.events.push({ e: 'brakeOn' });
+          b.lock = b.lockMax = b.lockBeats[Math.min(b.hits - 1, b.lockBeats.length - 1)];
+          b.burst = 0; b.charge = Math.max(b.charge, bf * 3);
+          w.events.push({ e: 'wake', x: b.x, y: b.y });
         }
       } else if (b.aim) {
         // embestida: se para, apunta y se lanza
         if (b.aim.t > 0) {
-          b.aim.t--; b.rot += 0.35;
+          if (b.aim.t > 1) b.aim.t--;
+          b.rot += 0.35;
           b.aim.x = pcx; b.aim.y = pcy;       // sigue apuntando hasta el último momento
-          if (b.aim.t === 0) {
+          if (beat && --b.aim.beats <= 0) {   // se lanza justo en el pulso
+            b.aim.t = 0;
             const dx = b.aim.x - b.x, dy = b.aim.y - b.y, l = Math.hypot(dx, dy) || 1;
             b.vx = dx / l * 10.5; b.vy = dy / l * 10.5; b.dash = 42;
             w.events.push({ e: 'dash', x: b.x, y: b.y });
@@ -279,32 +291,41 @@
         if (b.x > maxX) { b.x = maxX; b.vx = -Math.abs(b.vx); }
         if (b.y < minY) { b.y = minY; b.vy = Math.abs(b.vy); }
         if (b.y > maxY) { b.y = maxY; b.vy = -Math.abs(b.vy); }
-        // ráfagas de estrellas (desde el segundo golpe, en dos oleadas)
-        if (b.tele > 0) {
-          b.tele--;
-          if (b.tele === 0 || (b.rage >= 2 && b.tele === 20)) {
-            const off = (w.t * 0.37) % (Math.PI * 2) + (b.tele === 20 ? Math.PI / b.count : 0);
-            const v = 3.1 + b.rage * 0.35;
-            for (let i = 0; i < b.count; i++) {
-              const a = off + i / b.count * Math.PI * 2;
-              b.minis.push({ x: b.x, y: b.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: 9, rot: 0 });
-            }
-            w.events.push({ e: 'burst', x: b.x, y: b.y });
+        // ráfagas de estrellas al ritmo: aviso en un pulso, disparo dos pulsos después
+        // (con rabia, segunda oleada en el pulso siguiente, a contratiempo de la primera)
+        const fire = (second) => {
+          const off = (w.t * 0.37) % (Math.PI * 2) + (second ? Math.PI / b.count : 0);
+          const v = 3.1 + b.rage * 0.35;
+          for (let i = 0; i < b.count; i++) {
+            const a = off + i / b.count * Math.PI * 2;
+            b.minis.push({ x: b.x, y: b.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: 9, rot: 0 });
           }
-        } else if (--b.burst <= 0) {
-          b.tele = 42; b.burst = b.every;
+          w.events.push({ e: 'burst', x: b.x, y: b.y });
+        };
+        if (b.wave2 && beat) { b.wave2 = false; fire(true); }
+        if (b.tele > 0) {
+          if (b.tele > 1) b.tele--;
+          if (beat && --b.teleBeats <= 0) { b.tele = 0; fire(false); if (b.rage >= 2) b.wave2 = true; }
+        } else if (b.burst > 0) b.burst--;
+        else if (beat && !b.aim) {
+          b.teleBeats = 2; b.tele = b.teleDur = bf * 2; b.burst = b.every;
           w.events.push({ e: 'tele', x: b.x, y: b.y });
         }
-        // embestida desde el primer golpe
-        if (b.rage >= 1 && b.tele === 0 && --b.charge <= 0) {
-          b.aim = { t: 48, x: pcx, y: pcy };
+        // embestida desde el primer golpe, empezando en un pulso
+        if (b.rage >= 1 && b.tele === 0 && b.charge > 0) b.charge--;
+        if (b.rage >= 1 && b.tele === 0 && b.charge <= 0 && beat) {
+          b.aim = { t: bf * 2, dur: bf * 2, beats: 2, x: pcx, y: pcy };
           w.events.push({ e: 'aim', x: b.x, y: b.y });
         }
         if (Math.hypot(b.x - pcx, b.y - pcy) < b.r - 4) return 'boss';
       }
       // freno activo
+      if (b.stun === 0 && b.lock > 0 && beat) {
+        b.lock--;
+        w.events.push({ e: b.lock === 0 ? 'leverReady' : 'leverTick', left: b.lock });
+      }
       const br = b.brakes[b.brake];
-      if (br && b.stun === 0 && rectHit(p.x, p.y, p.w, p.h, br.x + 2, br.y + 2, T - 4, T - 4)) {
+      if (br && b.stun === 0 && b.lock === 0 && rectHit(p.x, p.y, p.w, p.h, br.x + 2, br.y + 2, T - 4, T - 4)) {
         b.hits++; b.rage = b.hits; b.stun = 70; b.speed *= 1.2; b.spin += 0.05;
         b.every = Math.round(b.every * 0.82); b.count += 2; b.burst = 80;
         b.aim = null; b.charge = Math.round(b.chargeT * 0.6); b.chargeT = Math.round(b.chargeT * 0.8);
@@ -326,7 +347,7 @@
       if (p.y + p.h > r.y + 6) return 'rise';
       w.bossProg = Math.max(w.bossProg, clamp01((w.track.y0 - p.y) / (w.track.y0 - w.track.y1)));
     }
-    if (w.def.boss.drops && !(b && b.enter > 0)) return stepDrops(w, p);
+    if (w.def.boss.drops && !(b && b.enter > 0)) return stepDrops(w, p, beat);
     return null;
   }
 
@@ -573,8 +594,8 @@
       if (Math.hypot(cx - s.x, cy - s.y) < s.r - 5) cause = 'saw';
     }
     if (p.y > w.ph + 40) cause = 'fall';
-    if (!cause && w.boss) cause = stepBoss(w, p);
-    else if (!cause && w.rise) cause = stepBoss(w, p);
+    if (!cause && w.boss) cause = stepBoss(w, p, input);
+    else if (!cause && w.rise) cause = stepBoss(w, p, input);
     if (cause && !w.done) {
       p.dead = true;
       w.events.push({ e: 'death', x: p.x + p.w / 2, y: p.y + p.h / 2, cause });

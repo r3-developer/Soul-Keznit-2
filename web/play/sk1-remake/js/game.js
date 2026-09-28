@@ -23,7 +23,7 @@
       voice: 'RECEPCIÓN DEL ABISMO', soldier: 'ALMA Nº 4.816.301', menuHint: '↑↓ ELEGIR · ENTER ACEPTAR · ESC VOLVER',
       optHint: '←→ CAMBIAR · ESC VOLVER', skip: 'ESC · SALTAR', next: 'ESPACIO', thanks: 'Gracias por no rendirte.',
       locked: 'BLOQUEADO', best: 'MEJOR', memEmpty: 'Recuerdo perdido. Búscalo en el nivel', memTitle: 'RECUERDOS DE KEZNIT',
-      memGot: 'RECUERDO', boss: 'JEFE', fullscreen: 'PANTALLA COMPLETA', controls: 'CONTROLES', exit: 'VOLVER A LA WEB', rotate: 'GIRA EL MÓVIL PARA VERLO MÁS GRANDE',
+      memGot: 'RECUERDO', boss: 'JEFE', fullscreen: 'PANTALLA COMPLETA', fsOut: 'SALIR DE PANTALLA COMPLETA', fsTip: ['PARA JUGAR A PANTALLA COMPLETA EN IPHONE:', 'COMPARTIR  ⬆  →  AÑADIR A PANTALLA DE INICIO'], controls: 'CONTROLES', downBtn: 'BAJAR', exit: 'VOLVER A LA WEB', rotate: 'GIRA EL MÓVIL PARA VERLO MÁS GRANDE',
       help: ['←→ · A D   MOVERSE', 'W · ↑ · ESPACIO   SALTAR (mantén = más alto)', 'PÉGATE A UNA PARED + SALTAR   SALTO DE PARED', '↓ · S   BAJAR DE PLATAFORMAS FINAS', 'R   REINICIAR NIVEL · ESC   PAUSA'],
       remake: 'REMAKE', end: 'FIN', stats: 'TU PARTIDA',
     },
@@ -36,7 +36,7 @@
       voice: 'ABYSS RECEPTION', soldier: 'SOUL NO. 4,816,301', menuHint: '↑↓ SELECT · ENTER ACCEPT · ESC BACK',
       optHint: '←→ CHANGE · ESC BACK', skip: 'ESC · SKIP', next: 'SPACE', thanks: 'Thank you for not giving up.',
       locked: 'LOCKED', best: 'BEST', memEmpty: 'Lost memory. Find it in level', memTitle: "KEZNIT'S MEMORIES",
-      memGot: 'MEMORY', boss: 'BOSS', fullscreen: 'FULLSCREEN', controls: 'CONTROLS', exit: 'BACK TO SITE', rotate: 'TURN YOUR PHONE FOR A BIGGER VIEW',
+      memGot: 'MEMORY', boss: 'BOSS', fullscreen: 'FULLSCREEN', fsOut: 'EXIT FULLSCREEN', fsTip: ['TO PLAY FULLSCREEN ON IPHONE:', 'SHARE  ⬆  →  ADD TO HOME SCREEN'], controls: 'CONTROLS', downBtn: 'DROP', exit: 'BACK TO SITE', rotate: 'TURN YOUR PHONE FOR A BIGGER VIEW',
       help: ['←→ · A D   MOVE', 'W · ↑ · SPACE   JUMP (hold = higher)', 'HUG A WALL + JUMP   WALL JUMP', '↓ · S   DROP THROUGH THIN PLATFORMS', 'R   RESTART LEVEL · ESC   PAUSE'],
       remake: 'REMAKE', end: 'THE END', stats: 'YOUR RUN',
     },
@@ -63,20 +63,22 @@
   let scale = 1, dpr = 1, offX = 0, offY = 0;
   const COARSE = matchMedia('(pointer: coarse)').matches;
   let usingTouch = COARSE;
-  let portrait = false, playing = false;
+  let portrait = false, playing = false, lowRes = false;
   function resize() {
     // en móviles se limita la resolución para que vaya fluido
-    dpr = Math.min(window.devicePixelRatio || 1, COARSE ? 1.5 : 2);
+    dpr = Math.min(window.devicePixelRatio || 1, COARSE ? 1.5 : 2, lowRes ? 1 : 9);
     portrait = usingTouch && playing && innerHeight > innerWidth * 1.1;
     scale = portrait ? innerWidth / VW : Math.min(innerWidth / VW, innerHeight / VH);
     const w = Math.round(VW * scale), h = Math.round(VH * scale);
     cv.style.width = w + 'px'; cv.style.height = h + 'px';
     offX = (innerWidth - w) / 2; offY = portrait ? Math.round(Math.max(10, (innerHeight - h) * 0.18)) : (innerHeight - h) / 2;
     document.body.classList.toggle('portrait', portrait);
+    document.body.style.setProperty('--gameH', Math.round(offY + h) + 'px');
     cv.style.left = offX + 'px'; cv.style.top = offY + 'px';
     cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
   }
   addEventListener('resize', resize);
+  if (window.visualViewport) visualViewport.addEventListener('resize', resize);
   resize();
   addEventListener('orientationchange', () => setTimeout(resize, 120));
 
@@ -93,7 +95,7 @@
     ArrowLeft: ['left'], KeyA: ['left'], ArrowRight: ['right'], KeyD: ['right'],
     ArrowUp: ['up', 'jump'], KeyW: ['up', 'jump'], ArrowDown: ['down'], KeyS: ['down'],
     Space: ['jump', 'confirm'], KeyZ: ['jump', 'confirm'], KeyK: ['jump'], Enter: ['confirm'],
-    Escape: ['back', 'pause'], Backspace: ['back'], KeyX: ['back'], KeyP: ['pause'], KeyR: ['restart'], KeyQ: ['quit'],
+    Escape: ['back', 'pause'], Backspace: ['back'], KeyX: ['back'], KeyP: ['pause'], KeyR: ['restart'], KeyQ: ['quit'], KeyF: ['full'],
   };
   addEventListener('keydown', (e) => {
     const acts = KEYMAP[e.code];
@@ -131,7 +133,7 @@
   const toLogical = (e) => ({ x: (e.clientX - offX) / scale, y: (e.clientY - offY) / scale });
   let mouse = { x: -1, y: -1, click: false };
   addEventListener('pointerdown', (e) => {
-    if (e.target.closest && e.target.closest('#pad, #padTop')) return;
+    if (e.target.closest && e.target.closest('#pad, #padTop, #padFs')) return;
     SKA.init();
     const pt = toLogical(e);
     if (e.pointerType === 'touch' && !usingTouch) setTouch(true);
@@ -156,28 +158,67 @@
   const ico = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
   const pad = document.createElement('div');
   pad.id = 'pad'; pad.hidden = true;
-  pad.innerHTML = `<div class="pd-move"><button data-k="left" aria-label="Izquierda">${ico('M15 5 7 12l8 7z')}</button><button data-k="right" aria-label="Derecha">${ico('M9 5l8 7-8 7z')}</button></div>
-    <button class="pd-down" data-k="down" aria-label="Bajar">${ico('M5 9h14l-7 8z')}</button>
+  pad.innerHTML = `<div class="pd-zone pd-zl"></div><div class="pd-zone pd-zr"></div>
+    <div class="pd-move"><button data-k="left" aria-label="Izquierda">${ico('M15 5 7 12l8 7z')}</button><button data-k="right" aria-label="Derecha">${ico('M9 5l8 7-8 7z')}</button></div>
+    <button class="pd-down" data-k="down" aria-label="Bajar de la plataforma">${ico('M5 9h14l-7 8z')}<span></span></button>
     <button class="pd-jump" data-k="jump" aria-label="Saltar">${ico('M12 5l8 11H4z')}</button>`;
   const topBtn = document.createElement('button');
   topBtn.id = 'padTop'; topBtn.hidden = true; topBtn.setAttribute('aria-label', 'Pausa');
+  const fsBtn = document.createElement('button');
+  fsBtn.id = 'padFs'; fsBtn.hidden = true;
   const rotHint = document.createElement('p');
   rotHint.id = 'rotHint'; rotHint.hidden = true;
-  document.body.append(pad, topBtn, rotHint);
+  document.body.append(pad, topBtn, fsBtn, rotHint);
+  const FS_IN = ico('M4 4h6v2H6v4H4zm10 0h6v6h-2V6h-4zM4 14h2v4h4v2H4zm14 0h2v6h-6v-2h4z');
+  const FS_OUT = ico('M8 4h2v6H4V8h4zm6 0h2v4h4v2h-6zM4 14h6v6H8v-4H4zm10 0h6v2h-4v4h-2z');
+  function fsBtnSync() {
+    const on = isFull();
+    fsBtn.innerHTML = on ? FS_OUT : FS_IN;
+    fsBtn.setAttribute('aria-label', on ? 'Salir de pantalla completa' : 'Pantalla completa');
+    fsBtn.classList.toggle('on', on);
+  }
+  fsBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); SKA.init(); SKA.sfx('select'); toggleFullscreen(); });
   document.body.classList.toggle('touch', usingTouch);
+  // Cada dedo se sigue desde que toca el mando hasta que se levanta, aunque pase por huecos:
+  // se puede deslizar de una flecha a otra sin soltar.
   const padPtr = new Map();
-  const keyAt = (x, y) => { const el = document.elementFromPoint(x, y); const b = el && el.closest && el.closest('#pad [data-k]'); return b ? b.dataset.k : null; };
+  const padBtn = (k) => pad.querySelector(`[data-k="${k}"]`);
+  const inR = (r, x, y, m) => x >= r.left - m && x <= r.right + m && y >= r.top - m && y <= r.bottom + m;
+  function keyAt(x, y, side) {
+    const L = padBtn('left').getBoundingClientRect(), R = padBtn('right').getBoundingClientRect();
+    const J = padBtn('jump').getBoundingClientRect();
+    if (!pad.classList.contains('nodown') && inR(padBtn('down').getBoundingClientRect(), x, y, 6)) return 'down';
+    if (inR(J, x, y, 10)) return 'jump';
+    // lado de las flechas: izquierda o derecha según la mitad, sin zona muerta entre ellas
+    const mid = (L.right + R.left) / 2;
+    if (side === 'move' || x < (mid + J.left) / 2) return x < mid ? 'left' : 'right';
+    return 'jump';
+  }
   function setKey(id, k) {
-    const old = padPtr.get(id) || null;
+    const old = padPtr.get(id);
+    if (old === undefined && k === undefined) return;
+    if (k === undefined) padPtr.delete(id); else padPtr.set(id, k);
     if (old === k) return;
-    if (k) padPtr.set(id, k); else padPtr.delete(id);
     if (old && ![...padPtr.values()].includes(old)) touchHeld.delete(old);
-    if (k && !touchHeld.has(k)) { touchHeld.add(k); pressed.add(k); if (k === 'jump' && navigator.vibrate) navigator.vibrate(8); }
+    if (k && !touchHeld.has(k)) { touchHeld.add(k); pressed.add(k); if (navigator.vibrate) navigator.vibrate(k === 'jump' ? 10 : 5); }
     pad.querySelectorAll('[data-k]').forEach(b => b.classList.toggle('on', touchHeld.has(b.dataset.k)));
   }
-  pad.addEventListener('pointerdown', (e) => { e.preventDefault(); SKA.init(); if (!usingTouch) setTouch(true); setKey(e.pointerId, keyAt(e.clientX, e.clientY)); });
-  pad.addEventListener('pointermove', (e) => { if (padPtr.has(e.pointerId)) setKey(e.pointerId, keyAt(e.clientX, e.clientY)); });
-  for (const ev of ['pointerup', 'pointercancel']) pad.addEventListener(ev, (e) => setKey(e.pointerId, null));
+  const ptrSide = new Map();
+  pad.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); SKA.init(); if (!usingTouch) setTouch(true);
+    // sin captura: así el dedo puede pasar a otro botón
+    if (e.target.releasePointerCapture) try { e.target.releasePointerCapture(e.pointerId); } catch (er) { /* nada */ }
+    const k = keyAt(e.clientX, e.clientY);
+    ptrSide.set(e.pointerId, k === 'left' || k === 'right' ? 'move' : 'act');
+    setKey(e.pointerId, k);
+  });
+  addEventListener('pointermove', (e) => {
+    if (!padPtr.has(e.pointerId)) return;
+    const side = ptrSide.get(e.pointerId), k = keyAt(e.clientX, e.clientY, side);
+    // el dedo de las flechas no salta sin querer, y el de saltar no se mueve
+    setKey(e.pointerId, side === 'move' && k === 'jump' ? padPtr.get(e.pointerId) : side === 'act' && (k === 'left' || k === 'right') ? padPtr.get(e.pointerId) : k);
+  }, { passive: true });
+  for (const ev of ['pointerup', 'pointercancel']) addEventListener(ev, (e) => { if (padPtr.has(e.pointerId)) { setKey(e.pointerId, undefined); ptrSide.delete(e.pointerId); } });
   pad.addEventListener('contextmenu', (e) => e.preventDefault());
   topBtn.addEventListener('pointerdown', (e) => {
     e.preventDefault(); SKA.init();
@@ -186,20 +227,26 @@
   function setTouch(on) {
     usingTouch = on;
     document.body.classList.toggle('touch', on);
-    if (!on) { touchHeld.clear(); padPtr.clear(); }
+    if (!on) { touchHeld.clear(); padPtr.clear(); ptrSide.clear(); }
     resize();
   }
   // Se decide cada fotograma qué se ve
-  let padShown = null, topShown = null, rotShown = null;
+  let padShown = null, topShown = null, rotShown = null, fsShown = null;
   function updateTouchUi() {
     const inPlay = scene === play && play.w && !play.paused && !play.cut && !play.surrender && !play.w.done;
     const showPad = usingTouch && !!inPlay;
     const nowPlaying = scene === play;
     if (nowPlaying !== playing) { playing = nowPlaying; resize(); }
-    if (showPad !== padShown) { pad.hidden = !showPad; padShown = showPad; if (!showPad) { touchHeld.clear(); padPtr.clear(); } }
+    if (showPad !== padShown) { pad.hidden = !showPad; padShown = showPad; if (!showPad) { touchHeld.clear(); padPtr.clear(); ptrSide.clear(); pad.querySelectorAll('.on').forEach(b => b.classList.remove('on')); } }
+    const noDown = !(scene === play && play.hasOneway);
+    if (pad.classList.contains('nodown') !== noDown) pad.classList.toggle('nodown', noDown);
+    const dl = pad.querySelector('.pd-down span'); if (dl && dl.textContent !== ui('downBtn')) dl.textContent = ui('downBtn');
     const showTop = usingTouch && scene !== boot && scene !== titleScene && !(scene === finaleScene && !finaleScene.o.skippable);
     if (showTop !== topShown) { topBtn.hidden = !showTop; topShown = showTop; }
     if (showTop) { const p = scene === play && !play.paused && !play.cut; const label = p ? '❚❚' : '✕'; if (topBtn.textContent !== label) topBtn.textContent = label; }
+    const showFs = usingTouch && scene !== boot && !standalone() && !(scene === finaleScene && !finaleScene.o.skippable);
+    if (showFs !== fsShown) { fsBtn.hidden = !showFs; fsShown = showFs; fsBtnSync(); }
+    if (showFs && fsBtn.classList.contains('solo') === showTop) fsBtn.classList.toggle('solo', !showTop);
     const showRot = usingTouch && portrait && !!inPlay;
     if (showRot !== rotShown) { rotHint.hidden = !showRot; rotShown = showRot; rotHint.textContent = ui('rotate'); }
   }
@@ -217,17 +264,19 @@
     for (let i = parts.length - 1; i >= 0; i--) {
       const q = parts[i];
       q.x += q.vx; q.y += q.vy; q.vy += q.g; q.vx *= 0.985; q.rot += q.vr; q.m++;
-      if (q.m > q.l) parts.splice(i, 1);
+      if (q.m > q.l) { parts[i] = parts[parts.length - 1]; parts.pop(); }
     }
   }
+  // cuadrados sin girar: mucho más baratos y a este tamaño no se nota
   function drawParts(cx, cy) {
-    for (const q of parts) {
-      const a = 1 - q.m / q.l;
-      ctx.globalAlpha = Math.max(0, a);
-      ctx.fillStyle = q.c;
-      ctx.save(); ctx.translate(q.x - cx, q.y - cy); ctx.rotate(q.rot);
-      ctx.fillRect(-q.s / 2, -q.s / 2, q.s, q.s);
-      ctx.restore();
+    let lastC = null;
+    for (let i = 0; i < parts.length; i++) {
+      const q = parts[i], a = 1 - q.m / q.l;
+      if (a <= 0) continue;
+      ctx.globalAlpha = a;
+      if (q.c !== lastC) { ctx.fillStyle = q.c; lastC = q.c; }
+      const h = q.s * (0.75 + 0.25 * Math.cos(q.rot));
+      ctx.fillRect(q.x - cx - h / 2, q.y - cy - h / 2, h, h);
     }
     ctx.globalAlpha = 1;
   }
@@ -236,24 +285,47 @@
 
   // polvo de fondo
   const ash = Array.from({ length: 40 }, () => ({ x: Math.random() * VW, y: Math.random() * VH, v: 0.15 + Math.random() * 0.35, s: 1 + Math.random() * 2, a: 0.05 + Math.random() * 0.15, ph: Math.random() * 6 }));
-  function drawBackdrop(cx, cy, tint, t) {
-    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, VH);
-    if (tint) {
-      const gr = ctx.createRadialGradient(VW / 2, VH * 1.1, 40, VW / 2, VH * 1.1, VW * 0.8);
+  const dots = mk(VW + 30, VH + 30);
+  { const g = dots.getContext('2d'); g.fillStyle = 'rgba(255,255,255,.045)'; for (let y = 0; y < VH + 30; y += 30) for (let x = 0; x < VW + 30; x += 30) g.fillRect(x, y, 2, 2); }
+  const tintCache = new Map();
+  function tintLayer(tint) {
+    let c = tintCache.get(tint);
+    if (!c) {
+      c = mk(VW / 4, VH / 4);
+      const g = c.getContext('2d'), gr = g.createRadialGradient(VW / 8, VH * 1.1 / 4, 10, VW / 8, VH * 1.1 / 4, VW * 0.2);
       gr.addColorStop(0, tint); gr.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = gr; ctx.fillRect(0, 0, VW, VH);
+      g.fillStyle = gr; g.fillRect(0, 0, c.width, c.height);
+      if (tintCache.size > 40) tintCache.clear();
+      tintCache.set(tint, c);
     }
+    return c;
+  }
+  function drawBackdrop(cx, cy, tint, t, tintA = 1, aura = null) {
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, VH);
+    if (tint) { ctx.globalAlpha = tintA; ctx.drawImage(tintLayer(tint), 0, 0, VW, VH); ctx.globalAlpha = 1; }
     // cuadrícula de puntos (paralaje)
-    ctx.fillStyle = 'rgba(255,255,255,.045)';
-    const ox = -((cx * 0.4) % 30), oy = -((cy * 0.4) % 30);
-    for (let y = oy; y < VH; y += 30) for (let x = ox; x < VW; x += 30) ctx.fillRect(x, y, 2, 2);
+    ctx.drawImage(dots, -(((cx * 0.4) % 30) + 30) % 30, -(((cy * 0.4) % 30) + 30) % 30);
+    ctx.fillStyle = aura ? aura.mote : '#fff';
+    const rise = aura ? aura.rise : 1;
     for (const a of ash) {
-      a.y -= a.v; a.x += Math.sin(t * 0.01 + a.ph) * 0.2;
+      a.y -= a.v * rise; a.x += Math.sin(t * 0.01 + a.ph) * 0.2 * rise;
       if (a.y < -5) { a.y = VH + 5; a.x = Math.random() * VW; }
-      ctx.fillStyle = `rgba(255,255,255,${a.a})`;
+      ctx.globalAlpha = a.a;
       ctx.fillRect(a.x, a.y, a.s, a.s);
     }
+    ctx.globalAlpha = 1;
   }
+
+  // Aura de cada acto: tinte del fondo, color y velocidad de las motas, y cuánto late con la música
+  const AURA = [
+    { tint: 'rgba(120,140,255,.16)', mote: '#c9d4ff', rise: 0.7, base: 0.7, beat: 0.3 },
+    { tint: 'rgba(181,51,255,.2)', mote: '#d9a3ff', rise: 0.5, base: 0.65, beat: 0.45 },
+    { tint: 'rgba(255,90,40,.22)', mote: '#ffa05a', rise: 1.8, base: 0.7, beat: 0.4 },
+    { tint: 'rgba(255,40,40,.3)', mote: '#ff5a4a', rise: 2.4, base: 0.55, beat: 0.8 },
+  ];
+  const heatGlow = mk(8, 64);
+  { const g = heatGlow.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, 'rgba(255,90,30,0)'); gr.addColorStop(1, 'rgba(255,70,30,.35)'); g.fillStyle = gr; g.fillRect(0, 0, 8, 64); }
+  let beatK = 0;
 
   // ---------- utilidades de dibujo ----------
   function text(s, x, y, size, color = '#fff', align = 'center', font = 'px', alpha = 1) {
@@ -263,7 +335,14 @@
     ctx.fillText(s, x, y);
     ctx.globalAlpha = 1;
   }
+  const wrapMemo = new Map();
   function wrap(s, maxW, size, font = 'px') {
+    const key = s + '|' + maxW + '|' + size + '|' + font;
+    let r = wrapMemo.get(key);
+    if (!r) { r = wrapRaw(s, maxW, size, font); if (wrapMemo.size > 200) wrapMemo.clear(); wrapMemo.set(key, r); }
+    return r;
+  }
+  function wrapRaw(s, maxW, size, font) {
     ctx.font = font === 'px' ? PX(size) : SERIF(size);
     const words = s.split(' '), lines = [];
     let line = '';
@@ -279,6 +358,27 @@
     ctx.fillStyle = color;
     const w = Math.max(3, r * width);
     for (let i = 0; i < arms / 2; i++) { ctx.rotate(Math.PI / (arms / 2)); ctx.fillRect(-r, -w / 2, r * 2, w); }
+    ctx.restore();
+  }
+  // Estrella con brillo ya dibujada en una imagen (el brillo es lo más caro de pintar)
+  const starCache = new Map();
+  function glowStar(x, y, r, rot, arms, width, color, blur) {
+    if (lowFx) { star(x, y, r, rot, arms, width, color); return; }
+    const k = `${Math.round(r)}|${arms}|${width}|${color}|${blur}`;
+    let c = starCache.get(k);
+    if (!c) {
+      const R = Math.round(r), pad = blur + 4, S = (R + pad) * 2;
+      c = mk(S * 2, S * 2);
+      const g = c.getContext('2d'); g.scale(2, 2); g.translate(S / 2, S / 2);
+      g.shadowColor = color; g.shadowBlur = blur * 2; g.fillStyle = color;
+      const w = Math.max(3, R * width);
+      for (let i = 0; i < arms / 2; i++) { g.rotate(Math.PI / (arms / 2)); g.fillRect(-R, -w / 2, R * 2, w); }
+      if (starCache.size > 120) starCache.clear();
+      starCache.set(k, c);
+    }
+    const S = c.width / 2, sc = r / Math.round(r);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot); if (sc !== 1) ctx.scale(sc, sc);
+    ctx.drawImage(c, -S / 2, -S / 2, S, S);
     ctx.restore();
   }
   const fmtTime = (f) => { const s = Math.floor(f / 60); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
@@ -413,7 +513,7 @@
   // ---------- título / menú principal ----------
   const demo = { x: 200, y: 0, vy: 0, t: 0 };
   const titleScene = {
-    enter() { this.t = 0; this.sel = 0; this.confirm = false; SKA.play('menu'); },
+    enter() { this.t = 0; this.sel = 0; this.confirm = false; SKA.play('menu'); SKA.ambience('menu'); },
     items() {
       const has = save.started;
       return [
@@ -456,13 +556,14 @@
       for (let i = 0; i < 6; i++) { const sx = ((i * 173 + this.t * 1.6) % (VW + 200)) - 100; ctx.fillStyle = COL.red; ctx.beginPath(); ctx.moveTo(sx, 488); ctx.lineTo(sx + 9, 470); ctx.lineTo(sx + 18, 488); ctx.fill(); }
       // título con glitch
       const gl = (Math.random() < 0.04) ? (Math.random() - 0.5) * 10 : 0;
-      text('SOUL KEZNIT', VW / 2 + 4 + gl, 118 + 3, 84, 'rgba(255,52,52,.8)');
-      text('SOUL KEZNIT', VW / 2 - gl * 0.5, 118, 84, '#fff');
-      ctx.fillStyle = COL.red; ctx.fillRect(VW / 2 - 250, 170, 500, 4);
+      const tb = 84 * (1 + beatK * 0.025);
+      text('SOUL KEZNIT', VW / 2 + 4 + gl, 118 + 3, tb, `rgba(255,52,52,${0.6 + beatK * 0.35})`);
+      text('SOUL KEZNIT', VW / 2 - gl * 0.5, 118, tb, '#fff');
+      glow(COL.red, 8 + beatK * 22); ctx.fillStyle = COL.red; ctx.fillRect(VW / 2 - 250, 170, 500, 4); noGlow();
       text(ui('remake'), VW / 2, 196, 22, 'rgba(255,255,255,.7)');
       if (this._items) { const many = this._items.length > 6; drawMenu(this, this._items, VW / 2, many ? 246 : 262, many ? 34 : 38, many ? 20 : 22); }
-      text('R3K1 · TheKittyBoyfriend', 20, VH - 18, 13, 'rgba(255,255,255,.35)', 'left');
-      text(ui('menuHint'), VW - 20, VH - 18, 13, 'rgba(255,255,255,.35)', 'right');
+      text('R3K1', 20, VH - 18, 13, 'rgba(255,255,255,.35)', 'left');
+      text(usingTouch ? (save.lang === 'en' ? 'TAP AN OPTION' : 'TOCA UNA OPCIÓN') : ui('menuHint'), VW - 20, VH - 18, 13, 'rgba(255,255,255,.35)', 'right');
       if (this.confirm) {
         ctx.fillStyle = 'rgba(0,0,0,.85)'; ctx.fillRect(0, 0, VW, VH);
         text(ui('sure'), VW / 2, 210, 40, '#fff');
@@ -497,9 +598,9 @@
         { label: ui('shake'), value: o.shake ? ui('on') : ui('off'), left: tog('shake'), right: tog('shake'), act: tog('shake') },
         { label: ui('crt'), value: o.crt ? ui('on') : ui('off'), left: tog('crt'), right: tog('crt'), act: tog('crt') },
         { label: ui('lang'), value: save.lang === 'en' ? 'ENGLISH' : 'ESPAÑOL', act: () => go(langScene, 'options'), left: () => { save.lang = save.lang === 'en' ? 'es' : 'en'; persist(); }, right: () => { save.lang = save.lang === 'en' ? 'es' : 'en'; persist(); } },
-        { label: ui('fullscreen'), act: toggleFullscreen },
+        { label: ui('fullscreen'), value: isFull() ? ui('on') : ui('off'), act: toggleFullscreen, left: toggleFullscreen, right: toggleFullscreen, hide: standalone() },
         { label: ui('back'), act: () => this.leave() },
-      ];
+      ].filter(it => !it.hide);
     },
     leave() { SKA.sfx('back'); if (this.from === 'pause') { scene = play; play.paused = true; play.pauseSel = 0; } else go(titleScene); },
     update() {
@@ -515,16 +616,34 @@
       text(ui('optHint'), VW / 2, VH - 24, 13, 'rgba(255,255,255,.35)');
     },
   };
+  // ---------- pantalla completa ----------
+  const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+  const standalone = () => matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
+  const fsApi = () => { const el = document.documentElement; return !!(el.requestFullscreen || el.webkitRequestFullscreen) && document.fullscreenEnabled !== false && document.webkitFullscreenEnabled !== false; };
+  const isFull = () => !!fsEl() || standalone();
+  let fsTip = 0;
   function goFullscreen() {
-    const d = document, el = d.documentElement;
-    if (d.fullscreenElement || d.webkitFullscreenElement || matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches) return;
-    try { const r = (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el); if (r && r.catch) r.catch(() => {}); } catch (e) { /* no se puede */ }
+    if (isFull()) return;
+    const el = document.documentElement;
+    // iPhone: Safari no deja poner una página a pantalla completa; se explica cómo instalarla
+    if (!fsApi()) { fsTip = 480; SKA.sfx('back'); return; }
+    try {
+      const r = (el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : el.webkitRequestFullscreen());
+      if (r && r.then) r.then(lockLandscape, () => {}); else lockLandscape();
+    } catch (e) { /* no se puede */ }
   }
-  function toggleFullscreen() {
-    const d = document, el = d.documentElement;
-    if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d);
-    else (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el);
+  function exitFullscreen() {
+    if (!fsEl()) return;
+    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) { /* nada */ }
+    try { const r = (document.exitFullscreen || document.webkitExitFullscreen).call(document); if (r && r.catch) r.catch(() => {}); } catch (e) { /* nada */ }
   }
+  // en el móvil, a pantalla completa se juega en horizontal
+  function lockLandscape() {
+    if (!usingTouch || !screen.orientation || !screen.orientation.lock) return;
+    screen.orientation.lock('landscape').catch(() => {});
+  }
+  function toggleFullscreen() { if (isFull() && !standalone()) exitFullscreen(); else goFullscreen(); }
+  for (const ev of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener(ev, () => { setTimeout(resize, 60); fsBtnSync(); });
 
   // ---------- selección de niveles ----------
   const levelsScene = {
@@ -647,29 +766,25 @@
   // ---------- créditos ----------
   const creditsScene = {
     enter() { this.t = 0; },
-    update() { this.t++; if (pressed.has('back') || pressed.has('confirm') || backClicked()) { go(titleScene); SKA.sfx('back'); } },
+    update() { this.t++; if (this.t === 30) SKA.sfx('slamTitle'); if (pressed.has('back') || pressed.has('confirm') || backClicked()) { go(titleScene); SKA.sfx('back'); } },
     draw() {
-      drawBackdrop(0, this.t, null, clock);
-      const lines = save.lang === 'en' ? [
-        ['SOUL KEZNIT · REMAKE', 34, '#fff'], ['', 10], ['A game by', 16, '#888'], ['R3K1 · TheKittyBoyfriend', 28, COL.red], ['', 14],
-        ['Based on the original Soul Keznit (Scratch)', 16, '#aaa'], ['Story, levels, characters and design: R3K1', 16, '#aaa'], ['', 14],
-        ['Music', 16, '#888'], ['New chiptune soundtrack made for the remake', 16, '#aaa'], ['Optional original music: "She Knows" (8 Bit Remix), 8 Bit Universe · by J. Cole', 14, '#aaa'], ['', 14],
-        ['Font: Pixelify Sans', 14, '#888'], ['', 20], [ui('thanks'), 24, '#fff', 'serif'],
-      ] : [
-        ['SOUL KEZNIT · REMAKE', 34, '#fff'], ['', 10], ['Un juego de', 16, '#888'], ['R3K1 · TheKittyBoyfriend', 28, COL.red], ['', 14],
-        ['Basado en el Soul Keznit original (Scratch)', 16, '#aaa'], ['Historia, niveles, personajes y diseño: R3K1', 16, '#aaa'], ['', 14],
-        ['Música', 16, '#888'], ['Banda sonora chiptune nueva, hecha para el remake', 16, '#aaa'], ['Música original opcional: "She Knows" (8 Bit Remix), 8 Bit Universe · de J. Cole', 14, '#aaa'], ['', 14],
-        ['Tipografía: Pixelify Sans', 14, '#888'], ['', 20], [ui('thanks'), 24, '#fff', 'serif'],
-      ];
-      let y = 70;
-      for (const [s, size, c, f] of lines) { if (s) text(s, VW / 2, y, size, c, 'center', f === 'serif' ? 'serif' : 'px'); y += size + 16; }
+      drawBackdrop(0, this.t, 'rgba(255,52,52,.12)', clock, 0.6 + beatK * 0.4);
+      const en = save.lang === 'en', a = (d) => Math.max(0, Math.min(1, (this.t - d) / 30));
+      text('SOUL KEZNIT · REMAKE', VW / 2, 70, 30, '#fff', 'center', 'px', a(0));
+      text(en ? 'A game by' : 'Un juego de', VW / 2, 140, 16, '#888', 'center', 'px', a(15));
+      const pop = 1 + Math.max(0, 1 - (this.t - 30) / 14) * 0.4;
+      if (this.t > 30) { glow(COL.red, 30 + Math.sin(clock * 0.08) * 10); text('R3K1', VW / 2, 205, 86 * pop, COL.red); noGlow(); }
+      ctx.fillStyle = COL.red; ctx.globalAlpha = a(45); ctx.fillRect(VW / 2 - 120, 262, 240, 3); ctx.globalAlpha = 1;
+      text(en ? 'Story · levels · code · art · soundtrack' : 'Historia · niveles · programación · arte · banda sonora', VW / 2, 300, 16, '#aaa', 'center', 'px', a(55));
+      text(ui('thanks'), VW / 2, 380, 28, '#fff', 'center', 'serif', a(80));
+      if (save.opts.orig) text(en ? 'Optional ORIGINAL track: "She Knows" (8 Bit Remix) · 8 Bit Universe' : 'Pista ORIGINAL opcional: "She Knows" (8 Bit Remix) · 8 Bit Universe', VW / 2, 450, 11, 'rgba(255,255,255,.3)');
       drawBackBtn();
     },
   };
 
   // ---------- historia (páginas) ----------
   const storyScene = {
-    enter(o) { this.pages = o.pages; this.then = o.then; this.i = 0; this.t = 0; this.chars = 0; SKA.play(o.music || 'menu'); this.o = o; },
+    enter(o) { this.pages = o.pages; this.then = o.then; this.i = 0; this.t = 0; this.chars = 0; SKA.play(o.music || 'menu'); SKA.ambience('void'); this.o = o; },
     update() {
       this.t++;
       const pg = this.pages[this.i];
@@ -757,7 +872,12 @@
 
   // ---------- tarjeta de acto / jefe ----------
   const cardScene = {
-    enter(o) { this.o = o; this.t = 0; if (o.sound) SKA.sfx(o.sound); },
+    enter(o) {
+      this.o = o; this.t = 0; if (o.sound) SKA.sfx(o.sound);
+      if (o.kind === 'phase') { SKA.sfx('slamTitle'); SKA.duck(1.2, 300); }
+      if (o.kind === 'act') { SKA.play(null); SKA.ambience(['void', 'clock', 'lava'][o.act]); }
+      if (o.kind === 'boss') { SKA.play(null); SKA.ambience('boss'); }
+    },
     update() {
       this.t++;
       if ((this.t > this.o.dur) || (this.t > 30 && (pressed.has('confirm') || pressed.has('jump')))) this.o.then();
@@ -811,13 +931,11 @@
     const showCard = fromMenu || prev === undefined || LV[prev].act !== L.act;
     const begin = () => { go(play, { i, fresh: true }); };
     if (L.bossPart === 0 && (fromMenu || prev !== i)) {
-      go(cardScene, { kind: 'boss', dur: 190, sound: 'tele', then: begin });
-      SKA.play('boss');
+      go(cardScene, { kind: 'boss', dur: 190, sound: 'bossIntro', then: begin });
     } else if (L.bossPart > 0 && prev !== i) {
       go(cardScene, { kind: 'phase', part: L.bossPart, name: tr(L.name), dur: 150, sound: 'roar', then: begin });
     } else if (showCard && L.act < 3 && !L.bossPart) {
-      go(cardScene, { kind: 'act', act: L.act, dur: 130, then: begin });
-      SKA.play(L.music);
+      go(cardScene, { kind: 'act', act: L.act, dur: 150, sound: 'actSting', then: begin });
     } else begin();
   }
 
@@ -828,8 +946,12 @@
       save.cur = o.i; persist();
       this.levelDeaths = 0; this.levelTime = 0; this.surrenderShown = 0;
       this.check = null; this.barShow = undefined; this.barVal = undefined; this.rageMsg = null;
+      this.rings = []; this.zoom = 1; this.lockMsg = null; this.lastBeat = null; this.beats = 0;
       this.load(true);
       SKA.play(this.L.music);
+      SKA.ambience(this.L.bossPart === 2 ? 'lava' : this.L.act === 3 ? 'boss' : ['void', 'clock', 'lava'][this.L.act]);
+      SKA.setIntensity(this.L.bossPart === 0 ? 1 : this.L.bossPart === 1 ? 1 : 3);
+      SKA.sfx('levelStart');
       this.voiceQ = this.L.voice ? this.L.voice.slice() : [];
       this.voice = null;
       this.cut = null;
@@ -842,6 +964,7 @@
       const gotFrag = !!save.frags[this.li];
       this.w = SKE.create(this.L, { gotFrag, check: this.check });
       this.layers = buildLayers(this.w);
+      this.hasOneway = this.w.grid.includes(TL.ONEWAY);
       this.cam = this.camTarget();
       if (first) { this.cam = this.camTarget(); }
       this.spawnT = 0;
@@ -884,7 +1007,8 @@
       if (w.p.dead) {
         this.dead++;
         if (this.dead === 24) {
-          this.load(false);
+          this.load(false); SKA.sfx('respawn');
+          if (this.L.bossPart === 1) SKA.setIntensity(1);
           if (this.levelDeaths > 0 && (this.levelDeaths === 12 || this.levelDeaths % 30 === 0) && this.surrenderShown < this.levelDeaths) {
             this.surrenderShown = this.levelDeaths;
             this.surrender = { sel: 1, t: 0, phase: 'ask' };
@@ -894,11 +1018,16 @@
         stepFx(this); return;
       }
       if (w.done) { stepFx(this); return; }
-      if (pressed.has('restart')) { this.check = null; this.load(false); return; }
+      if (pressed.has('restart')) { this.check = null; this.load(false); SKA.sfx('respawn'); if (this.L.bossPart === 1) SKA.setIntensity(1); return; }
 
+      // pulso de la música: el jefe ataca a su ritmo
+      const bt = SKA.beat();
+      let beat;
+      if (bt) { beat = bt.n !== this.lastBeat; this.lastBeat = bt.n; } else beat = w.t % 24 === 0;
+      if (beat) this.onBeat();
       const input = {
         left: isHeld('left'), right: isHeld('right'), down: isHeld('down'),
-        jump: isHeld('jump'), jumpPressed: pressed.has('jump'),
+        jump: isHeld('jump'), jumpPressed: pressed.has('jump'), beat, beatLen: bt ? 3600 / bt.bpm : 24,
       };
       const evs = SKE.step(w, input);
       this.levelTime++; save.time++;
@@ -919,7 +1048,19 @@
       this.cam.x += (tg.x - this.cam.x) * 0.12; this.cam.y += (tg.y - this.cam.y) * 0.12;
       // squash
       this.squash.x += (1 - this.squash.x) * 0.2; this.squash.y += (1 - this.squash.y) * 0.2;
+      if (this.lockMsg) this.lockMsg.t++;
+      if (this.alarmT > 0) this.alarmT--;
+      // estela de fuego en la embestida
+      const bb = w.boss;
+      if (bb && bb.aim && bb.aim.t === 0 && bb.dash > 0) burst(bb.x + (Math.random() - 0.5) * 30, bb.y + (Math.random() - 0.5) * 30, 2, Math.random() < 0.5 ? COL.red : COL.orange, 1.5, 6, -0.02, 26);
       stepFx(this);
+    },
+    onBeat() {
+      this.beats++;
+      if (this.L.act !== 3) return;
+      // el suelo del jefe retumba con la música
+      if (this.beats % 4 === 0 && save.opts.shake) shake = Math.max(shake, this.L.bossPart === 1 && this.w.boss && this.w.boss.rage >= 2 ? 3 : 1.6);
+      if (this.L.bossPart === 2 && this.beats % 16 === 1 && !this.w.done) { SKA.sfx('alarm'); this.alarmT = 40; }
     },
     onEvent(e) {
       const w = this.w;
@@ -946,11 +1087,26 @@
         case 'tele': SKA.sfx('tele'); break;
         case 'shard': SKA.sfx('shard'); burst(e.x, e.y, 10, COL.red, 2.5, 4, 0.15, 30); addShake(3); break;
         case 'aim': SKA.sfx('aim'); break;
-        case 'dash': SKA.sfx('dash'); addShake(8); flash = 0.12; flashCol = COL.red; break;
+        case 'dash': SKA.sfx('dash'); addShake(8); flash = 0.12; flashCol = COL.red; this.zoom = Math.max(this.zoom || 1, 1.03); break;
         case 'slam': SKA.sfx('slam'); addShake(10); burst(e.x, e.y, 16, '#fff', 3, 4, 0.1, 30); break;
-        case 'burst': SKA.sfx('burst'); addShake(4); break;
-        case 'bossHit': SKA.sfx('bossHit'); setTimeout(() => SKA.sfx('roar'), 350); addShake(18); flash = 0.55; flashCol = COL.orange; burst(e.x, e.y, 50, COL.red, 6, 6, 0.1, 50); this.hitstop = 10; this.rageMsg = { t: 0, hits: e.hits }; break;
-        case 'brakeOn': SKA.sfx('brake'); break;
+        case 'burst': SKA.sfx('burst'); addShake(5); this.rings.push({ x: e.x, y: e.y, t: 0, dur: 24, r: 150, c: '#fff', w: 5 }); break;
+        case 'bossHit': SKA.sfx('brake'); SKA.sfx('bossHit'); SKA.setIntensity(Math.min(3, 1 + e.hits)); this.zoom = 1.09; this.lockMsg = null;
+          this.rings.push({ x: e.x, y: e.y, t: 0, dur: 50, r: 600, c: COL.orange, w: 18 }); setTimeout(() => SKA.sfx('roar'), 350); addShake(18); flash = 0.55; flashCol = COL.orange; burst(e.x, e.y, 50, COL.red, 6, 6, 0.1, 50); this.hitstop = 16; this.rageMsg = { t: 0, hits: e.hits }; break;
+        case 'wake': {
+          SKA.sfx('wake'); addShake(14); flash = 0.3; flashCol = COL.red;
+          this.rings.push({ x: e.x, y: e.y, t: 0, dur: 40, r: 420, c: COL.red, w: 14 });
+          burst(e.x, e.y, 30, COL.orange, 5, 5, 0.05, 40);
+          this.lockMsg = { t: 0, ready: false };
+          break;
+        }
+        case 'leverTick': SKA.sfx(e.left <= 3 ? 'chargeHi' : 'charge'); break;
+        case 'leverReady': {
+          SKA.sfx('ready'); const br = w.boss.brakes[w.boss.brake];
+          if (br) { burst(br.x + 15, br.y + 15, 26, COL.orange, 3.5, 4, 0.05, 40); this.rings.push({ x: br.x + 15, y: br.y + 15, t: 0, dur: 30, r: 90, c: COL.orange, w: 6 }); }
+          flash = 0.12; flashCol = COL.orange; this.lockMsg = { t: 0, ready: true };
+          break;
+        }
+        case 'dropWarn': SKA.sfx('whistle'); break;
         case 'bossDown': this.complete({ x: w.boss.x, y: w.boss.y, boss: true }); break;
       }
     },
@@ -1012,8 +1168,9 @@
         { label: ui('resume'), act: () => { this.paused = false; SKA.pauseAll(false); } },
         { label: ui('restart'), act: () => { this.paused = false; SKA.pauseAll(false); this.check = null; this.load(false); } },
         { label: ui('options'), act: () => { SKA.pauseAll(false); go(optionsScene, 'pause'); } },
+        { label: isFull() ? ui('fsOut') : ui('fullscreen'), act: toggleFullscreen, hide: standalone() },
         { label: ui('quit'), act: () => { this.paused = false; SKA.pauseAll(false); persist(); go(titleScene); } },
-      ];
+      ].filter(it => !it.hide);
       const m = { sel: this.pauseSel || 0, _items: this._pItems };
       runMenu(m, items);
       this.pauseSel = m.sel; this._pItems = items;
@@ -1039,19 +1196,15 @@
       const w = this.w;
       const sx = shake ? (Math.random() - 0.5) * shake : 0, sy = shake ? (Math.random() - 0.5) * shake : 0;
       const cx = Math.round(this.cam.x - sx), cy = Math.round(this.cam.y - sy);
-      const tint = [null, 'rgba(181,51,255,.09)', 'rgba(255,52,52,.08)', `rgba(255,52,52,${0.14 + Math.sin(clock * 0.05) * 0.05})`][this.L.act];
-      drawBackdrop(cx, cy, tint, clock);
-      // jefe: engranajes gigantes girando al fondo
-      if (this.L.act === 3) {
-        const rage = w.boss && w.boss.rage || 0;
-        for (let i = 0; i < 4; i++) {
-          const gx = 160 + i * 330 - cx * 0.3, gy = 150 + (i % 2) * 260 - cy * 0.3;
-          star(gx, gy, 150 + (i % 2) * 40, clock * (0.006 + rage * 0.004) * (i % 2 ? 1 : -1), 12, 0.09, `rgba(255,52,52,${0.05 + rage * 0.015})`);
-        }
-      }
+      // el aura de cada acto: color del fondo y de las motas, y late con la música
+      const aura = AURA[this.L.act];
+      drawBackdrop(cx, cy, aura.tint, clock, aura.base + beatK * aura.beat, aura);
+      this.drawAura(cx, cy, aura);
+      const Z = this.zoom || 1;
+      if (Z > 1.0005) { ctx.save(); ctx.translate(VW / 2, VH / 2); ctx.scale(Z, Z); ctx.translate(-VW / 2, -VH / 2); }
       // capas
       ctx.drawImage(this.layers.solid, -cx, -cy);
-      const pulse = 0.75 + Math.sin(clock * 0.06) * 0.15 + (Math.random() < 0.01 ? 0.3 : 0);
+      const pulse = 0.68 + Math.sin(clock * 0.06) * 0.08 + beatK * 0.25 + (Math.random() < 0.01 ? 0.3 : 0);
       ctx.globalAlpha = pulse; ctx.drawImage(this.layers.red, -cx, -cy); ctx.globalAlpha = 1;
       this.drawTiles(cx, cy);
       this.drawEnts(cx, cy);
@@ -1059,14 +1212,55 @@
       if (w.drops && w.drops.length) this.drawDrops(cx, cy);
       this.drawPlayer(cx, cy);
       drawParts(cx, cy);
+      this.drawRings(cx, cy);
       if (w.rise) this.drawRise(cx, cy);
       if (this.L.dark) this.drawDark(cx, cy);
+      if (Z > 1.0005) ctx.restore();
+      if (this.alarmT > 0) { const k = this.alarmT / 40; ctx.globalAlpha = k * 0.25 * (this.alarmT % 20 < 10 ? 1 : 0.4); ctx.fillStyle = COL.red; ctx.fillRect(0, 0, VW, 40); ctx.fillRect(0, VH - 30, VW, 30); ctx.globalAlpha = 1; }
       if (this.cut) this.drawCut(cx, cy);
       if (flash > 0) { ctx.globalAlpha = flash; ctx.fillStyle = flashCol; ctx.fillRect(0, 0, VW, VH); ctx.globalAlpha = 1; }
       if (this.wipe) this.drawWipe();
       this.drawHud();
       if (this.surrender) this.drawSurrender();
       if (this.paused) this.drawPause();
+    },
+    drawAura(cx, cy, aura) {
+      const t = clock;
+      if (this.L.act === 0) {
+        // Llegada: haces de luz fría que caen desde arriba
+        for (let i = 0; i < 4; i++) {
+          const x = ((i * 290 - cx * 0.15) % (VW + 200) + VW + 200) % (VW + 200) - 100, a = 0.025 + Math.sin(t * 0.01 + i * 1.7) * 0.015;
+          const gr = ctx.createLinearGradient(0, 0, 0, VH); gr.addColorStop(0, `rgba(170,190,255,${a})`); gr.addColorStop(1, 'rgba(170,190,255,0)');
+          ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + 70, 0); ctx.lineTo(x + 160, VH); ctx.lineTo(x + 40, VH); ctx.fill();
+        }
+      } else if (this.L.act === 1) {
+        // Pruebas: engranajes de reloj al fondo, que avanzan a golpes con el pulso
+        const tick = (this.beats || 0) + (1 - beatK) * 0.3;
+        for (let i = 0; i < 3; i++) {
+          const gx = 180 + i * 360 - cx * 0.2, gy = 140 + (i % 2) * 280 - cy * 0.2;
+          star(gx, gy, 110 + (i % 2) * 50, tick * 0.13 * (i % 2 ? 1 : -1), 12, 0.07, `rgba(181,51,255,${0.05 + beatK * 0.03})`);
+          ctx.strokeStyle = `rgba(181,51,255,${0.06 + beatK * 0.04})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(gx, gy, 60 + (i % 2) * 30, 0, Math.PI * 2); ctx.stroke();
+        }
+      } else if (this.L.act === 2) {
+        // Procesado: calor que sube desde abajo
+        ctx.globalAlpha = 0.5 + beatK * 0.3; ctx.drawImage(heatGlow, 0, VH - 180, VW, 180); ctx.globalAlpha = 1;
+        if (clock % 5 === 0) burst(cx + Math.random() * VW, cy + VH + 10, 1, Math.random() < 0.6 ? COL.orange : COL.red, 0.5, 3, -0.05, 90);
+      } else {
+        // jefe: engranajes gigantes girando al fondo, que se encienden con el pulso
+        const rage = this.w.boss && this.w.boss.rage || 0;
+        for (let i = 0; i < 4; i++) {
+          const gx = 160 + i * 330 - cx * 0.3, gy = 150 + (i % 2) * 260 - cy * 0.3;
+          star(gx, gy, 150 + (i % 2) * 40, clock * (0.006 + rage * 0.004) * (i % 2 ? 1 : -1), 12, 0.09, `rgba(255,52,52,${0.05 + rage * 0.015 + beatK * 0.05})`);
+        }
+      }
+    },
+    drawRings(cx, cy) {
+      for (const r of this.rings || []) {
+        const k = r.t / r.dur, e = 1 - Math.pow(1 - k, 3);
+        ctx.globalAlpha = 1 - k; ctx.strokeStyle = r.c; ctx.lineWidth = r.w * (1 - k) + 1;
+        ctx.beginPath(); ctx.arc(r.x - cx, r.y - cy, Math.max(1, e * r.r), 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
     },
     drawTiles(cx, cy) {
       const w = this.w;
@@ -1198,9 +1392,7 @@
           s.path.forEach((q, i) => { const X = q[0] * T - cx, Y = q[1] * T - cy; i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); });
           ctx.stroke(); ctx.setLineDash([]);
         }
-        glow(COL.red, 16);
-        star(s.x - cx, s.y - cy, s.r, clock * 0.28, 8, 0.24);
-        noGlow();
+        glowStar(s.x - cx, s.y - cy, s.r, clock * 0.28, 8, 0.24, COL.red, 16);
       }
       // llaves
       for (const k of w.keys) {
@@ -1277,6 +1469,17 @@
         b.brakes.forEach((br, i) => {
           const X = br.x - cx, Y = br.y - cy;
           if (i < b.brake || (i === b.brake && b.stun > 0 && b.hits > i)) { ctx.fillStyle = 'rgba(255,170,51,.2)'; ctx.fillRect(X + 6, Y + 18, 18, 12); return; }
+          if (i === b.brake && b.lock > 0 && !b.stun) {
+            // recargando: palanca apagada con un anillo que se va llenando a cada pulso
+            const prog = Math.min(1, (b.lockMax - b.lock + (1 - beatK) * 0.9) / b.lockMax);
+            ctx.fillStyle = 'rgba(255,170,51,.3)'; ctx.fillRect(X + 4, Y + 20, 22, 10); ctx.fillRect(X + 13, Y + 6, 4, 16);
+            ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(X + 15, Y + 14, 24, 0, Math.PI * 2); ctx.stroke();
+            glow(COL.orange, 8 + beatK * 10);
+            ctx.strokeStyle = b.lock <= 3 && clock % 8 < 4 ? '#fff' : COL.orange; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.arc(X + 15, Y + 14, 24, -Math.PI / 2, -Math.PI / 2 + prog * Math.PI * 2); ctx.stroke(); noGlow();
+            text(String(b.lock), X + 15, Y - 22, 16, 'rgba(255,170,51,.8)');
+            return;
+          }
           if (i === b.brake) {
             const pz = 0.6 + Math.sin(clock * 0.2) * 0.4;
             glow(COL.orange, 20 * pz);
@@ -1294,7 +1497,7 @@
       if (!b.x && b.x !== 0) return;
       const X = b.x - cx, Y = b.y - cy;
       const stun = b.stun > 0;
-      const tele = b.tele > 0 ? 1 - b.tele / 42 : 0;
+      const tele = b.tele > 0 ? 1 - b.tele / (b.teleDur || 42) : 0;
       const rage = b.rage || 0;
       if (b.down) {
         // se rompe: tiembla, se infla y estalla en trozos
@@ -1307,7 +1510,7 @@
         if (b.down % 12 === 0) { SKA.sfx('slam'); addShake(8); }
         return;
       }
-      const pulse = 1 + Math.sin(clock * 0.22) * 0.04 + tele * 0.18 + (b.aim && b.aim.t > 0 ? 0.12 : 0);
+      const pulse = 1 + beatK * 0.08 + tele * 0.18 + (b.aim && b.aim.t > 0 ? 0.12 : 0);
       const R = b.r * pulse;
       const body = stun ? (clock % 6 < 3 ? '#fff' : COL.red) : rage >= 2 ? '#ff2020' : COL.red;
       // estela de imágenes
@@ -1361,7 +1564,7 @@
       // brasas
       if (clock % 2 === 0) burst(b.x + (Math.random() - 0.5) * R, b.y + (Math.random() - 0.5) * R, 1, Math.random() < 0.5 ? COL.red : COL.orange, 1.2, 3, -0.03, 35);
       if (stun && clock % 4 === 0) burst(b.x, b.y, 2, '#fff', 3, 3);
-      for (const m of b.minis || []) { glow(COL.red, 10); star(m.x - cx, m.y - cy, m.r + 3, m.rot, 8, 0.28); noGlow(); }
+      for (const m of b.minis || []) glowStar(m.x - cx, m.y - cy, m.r + 3, m.rot, 8, 0.28, COL.red, 10);
     },
     drawDrops(cx, cy) {
       const w = this.w;
@@ -1378,7 +1581,7 @@
           ctx.beginPath(); ctx.moveTo(X - 9, gy); ctx.lineTo(X + 9, gy); ctx.lineTo(X, gy - 12); ctx.fill();
           star(X + (Math.random() - 0.5) * 3, Y, s.r * (0.5 + 0.5 * (1 - s.tele / 45)), s.rot, 8, 0.28, 'rgba(255,52,52,.8)');
         } else {
-          glow(COL.red, 14); star(X, Y, s.r + 3, s.rot, 8, 0.28); noGlow();
+          glowStar(X, Y, s.r + 3, s.rot, 8, 0.28, COL.red, 14);
           if (clock % 2 === 0) burst(s.x, s.y - 8, 1, COL.orange, 0.6, 3, -0.02, 18);
         }
       }
@@ -1413,7 +1616,7 @@
       {
         const p = this.w.p, X = VW / 2 + Math.sin(clock * 0.02) * 120, Y = top + 30, R = 95;
         const jam = Math.sin(clock * 0.9) * 0.08 + clock * 0.02;
-        glow(COL.red, 40); star(X, Y, R, jam, 8, 0.2, '#ff2a2a'); noGlow();
+        glow(COL.red, 40); star(X, Y, R * (1 + beatK * 0.06), jam, 8, 0.2, '#ff2a2a'); noGlow();
         star(X, Y, R * 1.25, -jam * 0.6, 16, 0.07, 'rgba(255,120,60,.5)');
         ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(X, Y, R * 0.36, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(X, Y, R * 0.27, 0, Math.PI * 2); ctx.fill();
@@ -1484,10 +1687,11 @@
       const a = this.nameT < 200 ? 1 : Math.max(0.35, 1 - (this.nameT - 200) / 60);
       text(L.id, 22, 26, 16, COL.red, 'left', 'px', a);
       text(tr(L.name).toUpperCase(), 70, 26, 16, '#fff', 'left', 'px', a * 0.9);
-      text(`✕ ${this.levelDeaths}`, VW - 24, 26, 16, 'rgba(255,255,255,.7)', 'right');
-      text(fmtTime(this.levelTime), VW - 100, 26, 16, 'rgba(255,255,255,.45)', 'right');
+      const hx = VW - (usingTouch ? 150 : 24);   // en el móvil, a la izquierda de los botones de arriba
+      text(`✕ ${this.levelDeaths}`, hx, 26, 16, 'rgba(255,255,255,.7)', 'right');
+      text(fmtTime(this.levelTime), hx - 76, 26, 16, 'rgba(255,255,255,.45)', 'right');
       if (this.w.frags.length) {
-        ctx.save(); ctx.translate(VW - 200, 26); ctx.rotate(Math.PI / 4);
+        ctx.save(); ctx.translate(hx - 176, 26); ctx.rotate(Math.PI / 4);
         if (this.w.gotFrag) { ctx.fillStyle = '#fff'; ctx.fillRect(-5, -5, 10, 10); } else { ctx.strokeStyle = 'rgba(255,255,255,.4)'; ctx.lineWidth = 2; ctx.strokeRect(-5, -5, 10, 10); }
         ctx.restore();
       }
@@ -1517,6 +1721,11 @@
         const m = this.rageMsg, al = Math.min(1, m.t / 8, (110 - m.t) / 20);
         const msg = m.hits >= 3 ? (save.lang === 'en' ? 'IT BREAKS!' : '¡SE ROMPE!') : (save.lang === 'en' ? 'IT GETS ANGRIER!' : '¡SE ENFURECE!');
         text(msg, VW / 2 + (Math.random() - 0.5) * 4, VH / 2 - 130, 44, m.hits >= 3 ? '#fff' : COL.red, 'center', 'px', al);
+      }
+      if (this.lockMsg && this.lockMsg.t < 150) {
+        const m = this.lockMsg, al = Math.min(1, m.t / 10, (150 - m.t) / 25), en = save.lang === 'en';
+        const msg = m.ready ? (en ? 'LEVER READY!' : '¡PALANCA LISTA!') : (en ? 'THE LEVER IS RECHARGING. SURVIVE!' : 'LA PALANCA SE RECARGA. ¡AGUANTA!');
+        text(msg, VW / 2, 112, m.ready ? 26 : 20, m.ready ? COL.orange : '#fff', 'center', 'px', al * (m.ready ? 1 : 0.85));
       }
       if (this.memory) {
         const m = this.memory, al = Math.min(1, m.t / 30, (460 - m.t) / 40);
@@ -1551,9 +1760,9 @@
     drawPause() {
       ctx.fillStyle = 'rgba(0,0,0,.78)'; ctx.fillRect(0, 0, VW, VH);
       text(ui('paused'), VW / 2, 110, 48, '#fff');
-      if (this._pItems) drawMenu({ sel: this.pauseSel }, this._pItems, VW / 2, 210, 48, 24);
+      if (this._pItems) drawMenu({ sel: this.pauseSel }, this._pItems, VW / 2, 186, 42, 22);
       const h = ui('help');
-      h.forEach((l, i) => text(l, VW / 2, 410 + i * 22, 13, 'rgba(255,255,255,.45)'));
+      h.forEach((l, i) => text(l, VW / 2, 414 + i * 22, 13, 'rgba(255,255,255,.45)'));
     },
     drawSurrender() {
       const s = this.surrender;
@@ -1579,6 +1788,8 @@
   function openPause() { play.paused = true; play.pauseSel = 0; SKA.sfx('back'); SKA.pauseAll(true); }
   function stepFx() {
     updParts();
+    if (play.rings) { for (const r of play.rings) r.t++; play.rings = play.rings.filter(r => r.t < r.dur); }
+    if (play.zoom > 1) play.zoom = Math.max(1, 1 + (play.zoom - 1) * 0.9 - 0.001);
     if (shake > 0) shake = Math.max(0, shake * 0.86 - 0.1);
     if (flash > 0) flash = Math.max(0, flash - 0.03);
   }
@@ -1593,7 +1804,7 @@
   // A: la Trituradora estalla · B: las almas suben · C: la Voz · D: cadenas y caída · E: el Torturador · F: título
   const FIN = { blast: 170, souls: 260, voice: 640, chains: 1010, eyes: 1230, title: 1490 };
   const finaleScene = {
-    enter(o) { this.o = o; this.t = 0; this.shards = []; this.souls = []; this.ky = 0; this.kv = 0; SKA.play(null); SKA.sfx('rumble'); },
+    enter(o) { this.o = o; this.t = 0; this.shards = []; this.souls = []; this.ky = 0; this.kv = 0; SKA.play(null); SKA.ambience('lava'); SKA.sfx('rumble'); },
     update() {
       const t = ++this.t, F = ST.finale;
       if (pressed.has('back') && this.o.skippable) { this.o.then(); return; }
@@ -1611,7 +1822,7 @@
       const slow = t > FIN.blast && t < FIN.blast + 40 ? 0.35 : 1;
       for (const q of this.shards) { q.x += q.vx * slow; q.y += q.vy * slow; q.vy += 0.3 * slow; q.rot += q.vr * slow; }
       // B · almas liberadas
-      if (t === FIN.souls) { SKA.play('final'); SKA.sfx('souls'); }
+      if (t === FIN.souls) { SKA.play('final'); SKA.sfx('souls'); SKA.ambience('void'); }
       if (t > FIN.blast + 20 && t < FIN.voice - 60 && t % 3 === 0) {
         this.souls.push({ x: GX + (Math.random() - 0.5) * 160, y: GY + 10, vy: -(0.8 + Math.random() * 1.6), ph: Math.random() * 6, sz: 6 + Math.random() * 8, a: 0 });
       }
@@ -1629,10 +1840,10 @@
       if (t === FIN.chains + 55) { SKA.sfx('rumble'); SKA.sfx('chains'); shake = 14; }
       if (t > FIN.chains + 70) { this.kv += 0.35; this.ky += this.kv; }
       // E · el Torturador
-      if (t === FIN.eyes) SKA.play(null);
+      if (t === FIN.eyes) { SKA.play(null); SKA.ambience('boss'); }
       if (t === FIN.eyes + 40) { SKA.sfx('roar'); shake = 10; }
       // F · título
-      if (t === FIN.title) SKA.play('final');
+      if (t === FIN.title) { SKA.play('final'); SKA.ambience('menu'); }
       if (t === FIN.title + 60) { SKA.sfx('slamTitle'); shake = 22; flash = 0.7; flashCol = '#fff'; }
     },
     draw() {
@@ -1703,7 +1914,7 @@
       } else if (t < FIN.eyes) {
         // la Voz: fondo que se apaga con interferencias rojas
         const dark = Math.min(1, (t - FIN.voice) / 40);
-        drawBackdrop(0, 0, `rgba(255,52,52,${0.08 * (1 - dark)})`, clock);
+        drawBackdrop(0, 0, 'rgba(255,52,52,.08)', clock, 1 - dark);
         ctx.fillStyle = `rgba(0,0,0,${dark * 0.85})`; ctx.fillRect(-20, -20, VW + 40, VH + 40);
         if (Math.random() < 0.25) { ctx.fillStyle = 'rgba(255,52,52,.12)'; ctx.fillRect(0, Math.random() * VH, VW, 4 + Math.random() * 20); }
         text(ui('voice'), VW / 2, 100, 14, COL.red, 'center', 'px', dark);
@@ -1775,7 +1986,7 @@
     ctx.globalAlpha = 1;
   }
   const statsScene = {
-    enter() { this.t = 0; SKA.play('final'); },
+    enter() { this.t = 0; SKA.play('final'); SKA.ambience('menu'); },
     update() { this.t++; if (this.t > 60 && (pressed.has('confirm') || pressed.has('back'))) { SKA.sfx('select'); go(creditsScene); } },
     draw() {
       drawBackdrop(0, this.t * 0.3, 'rgba(255,52,52,.06)', clock);
@@ -1802,6 +2013,8 @@
     while (acc >= stepMs && n < 4) {
       pollPad();
       clock++;
+      if (pressed.has('full') && scene !== boot) toggleFullscreen();
+      if (fsTip > 0) fsTip--;
       scene.update();
       if (scene !== play) stepFx();
       pressed.clear(); mouse.click = false;
@@ -1812,14 +2025,27 @@
     // si el dispositivo va justo, se quitan los brillos (lo más caro de dibujar)
     const dt = now - (frame.prev || now); frame.prev = now;
     frame.avg = (frame.avg || 16) * 0.95 + Math.min(dt, 100) * 0.05;
-    if (!lowFx && frame.avg > 24 && clock > 240) lowFx = true;
+    // primero se baja la resolución; si aún va lento, se quitan los brillos
+    if (!lowRes && frame.avg > 22 && clock > 240 && dpr > 1) { lowRes = true; resize(); frame.avg = 16; frame.slowAt = clock; }
+    else if (!lowFx && frame.avg > 24 && clock > (frame.slowAt || 0) + 240) lowFx = true;
+    const bt = SKA.beat();
+    beatK = bt ? Math.pow(1 - bt.frac, 3) : Math.pow(1 - (clock % 24) / 24, 3) * 0.5;
     ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
     ctx.imageSmoothingEnabled = true;
     scene.draw();
     if (scene !== play) drawParts(0, 0);
     ctx.drawImage(vignette, 0, 0);
     if (save.opts.crt) ctx.drawImage(scan, 0, 0);
+    if (fsTip > 0) drawFsTip();
     requestAnimationFrame(frame);
+  }
+
+  function drawFsTip() {
+    const a = Math.min(1, fsTip / 30, (480 - fsTip) / 12), [l1, l2] = ui('fsTip');
+    ctx.globalAlpha = a * 0.9; ctx.fillStyle = '#000'; ctx.fillRect(0, VH / 2 - 60, VW, 120);
+    ctx.fillStyle = COL.red; ctx.fillRect(0, VH / 2 - 60, VW, 3); ctx.fillRect(0, VH / 2 + 57, VW, 3); ctx.globalAlpha = 1;
+    text(l1, VW / 2, VH / 2 - 18, 18, 'rgba(255,255,255,.7)', 'center', 'px', a);
+    text(l2, VW / 2, VH / 2 + 20, 24, '#fff', 'center', 'px', a);
   }
 
   // Inicio
@@ -1828,7 +2054,7 @@
   const fontsReady = document.fonts ? document.fonts.load(PX(20)).catch(() => {}) : Promise.resolve();
   const boot = {
     t: 0,
-    update() { this.t++; if (pressed.has('confirm') || pressed.has('jump') || mouse.click) { SKA.init(); SKA.sfx('select'); if (usingTouch) goFullscreen(); if (save.lang) go(titleScene); else go(langScene, 'title'); } },
+    update() { this.t++; if (pressed.has('confirm') || pressed.has('jump') || mouse.click) { SKA.init(); SKA.sfx('start'); if (usingTouch && fsApi()) goFullscreen(); if (save.lang) go(titleScene); else go(langScene, 'title'); } },
     draw() {
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, VH);
       glow('rgba(255,255,255,.8)', 24); ctx.fillStyle = '#fff';
