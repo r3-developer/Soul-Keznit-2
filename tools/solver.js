@@ -1,6 +1,6 @@
 // Comprueba que cada nivel del remake de Soul Keznit se puede superar,
 // buscando una secuencia de controles con la física real del motor.
-// Uso: node tools/solver.js [id] [--frag]
+// Uso: node tools/solver.js [id] [--frag] [--checks]
 const SKE = require('../web/play/sk1-remake/js/engine.js');
 const { LEVELS } = require('../web/play/sk1-remake/js/levels.js');
 
@@ -11,6 +11,7 @@ function clone(w) {
   c.crumble = new Map([...w.crumble].map(([k, v]) => [k, Object.assign({}, v)]));
   c.keys = w.keys.map(k => Object.assign({}, k));
   c.frags = w.frags.map(k => Object.assign({}, k));
+  c.checks = w.checks.map(k => Object.assign({}, k));
   c.plats = w.plats.map(k => Object.assign({}, k));
   c.saws = w.saws.map(k => Object.assign({}, k));
   if (w.p.ride) c.p.ride = c.plats[w.plats.indexOf(w.p.ride)];
@@ -39,8 +40,8 @@ function goalOf(w, wantFrag) {
   if (w.keys.length && !w.hasKey) return w.keys[0];
   return w.flags[0];
 }
-function solve(def, wantFrag, maxNodes = 400000) {
-  const w0 = SKE.create(def, {});
+function solve(def, wantFrag, maxNodes = 400000, opts = {}) {
+  const w0 = SKE.create(def, opts);
   const timed = !!(w0.plats.length || w0.saws.some(s => s.speed) || def.map.some(r => /[xy]/.test(r)) || w0.rise || w0.boss);
   const q = timed ? 5 : 3;
   // periodo común de todo lo que se mueve (si existe y es pequeño)
@@ -119,6 +120,7 @@ function solve(def, wantFrag, maxNodes = 400000) {
 }
 const only = process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[2] : null;
 const frag = process.argv.includes('--frag');
+const checks = process.argv.includes('--checks');
 for (const def of LEVELS) {
   if (only && def.id !== only) continue;
   const W = def.map[0].length;
@@ -131,6 +133,16 @@ for (const def of LEVELS) {
   if (frag && def.map.some(x => x.includes('M'))) {
     const f = solve(def, true);
     msg += ` · fragmento ${f.fail ? 'NO (' + f.fail + ')' : 'ok'}`;
+  }
+  // desde cada punto de control (con y sin llave si el nivel tiene llave)
+  const nChecks = checks ? def.map.join('').split('C').length - 1 : 0;
+  const hasKeys = def.map.some(x => x.includes('K'));
+  for (let i = 0; i < nChecks; i++) {
+    const res = (hasKeys ? [false, true] : [false]).map(key => {
+      const c = solve(def, false, 400000, { check: { i, key } });
+      return `${key ? 'con llave ' : ''}${c.fail ? 'NO (' + c.fail + ')' : 'ok'}`;
+    });
+    msg += ` · control ${i}: ${res.join(', ')}`;
   }
   console.log(msg);
 }

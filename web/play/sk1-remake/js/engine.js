@@ -7,7 +7,7 @@
   const PHY = {
     runMax: 5.5,
     groundAcc: 1.1, groundDec: 1.4, turnBoost: 1.8,
-    airAcc: 0.62, airDec: 0.22,
+    airAcc: 0.62, airDec: 0.12, airTurn: 1.8,
     gravUp: 0.55, gravDown: 0.82, apexHang: 0.5,
     jump: 10.4, jumpCut: 0.45,
     maxFall: 12, wallSlide: 2.2,
@@ -36,7 +36,7 @@
     const grid = new Uint8Array(W * H);
     const w = {
       def, W, H, grid, pw: W * T, ph: H * T,
-      start: { x: T, y: T }, keys: [], flags: [], frags: [], ports: {}, exits: {},
+      start: { x: T, y: T }, keys: [], flags: [], frags: [], checks: [], ports: {}, exits: {},
       saws: [], plats: [], npcs: [], crumble: new Map(),
     };
     for (let r = 0; r < H; r++) {
@@ -49,6 +49,7 @@
         else if (ch === 'K') w.keys.push({ x: c * T, y: r * T });
         else if (ch === 'F') w.flags.push({ x: c * T, y: r * T });
         else if (ch === 'M') w.frags.push({ x: c * T, y: r * T });
+        else if (ch === 'C') w.checks.push({ x: c * T, y: r * T });
         else if (ch === 'N') w.npcs.push({ x: c * T + 3, y: r * T + T - 24 });
         else if (ch === '*') w.saws.push({ path: [[c + .5, r + .5]], speed: 0, r: 22 });
         else if (/[a-e]/.test(ch)) w.ports[ch] = { x: c * T, y: r * T };
@@ -97,8 +98,16 @@
     w.p = {
       x: w.start.x, y: w.start.y, w: PW, h: PH, vx: 0, vy: 0,
       onGround: false, wall: 0, coyote: 0, buffer: 0, wallCoyote: 0, wallDir: 0,
-      lock: 0, tramp: false, dead: false, face: 1, port: 0, ride: null, landed: 0, airTime: 0,
+      lock: 0, tramp: false, dead: false, face: 1, port: 0, ride: null, landed: 0, airTime: 0, belt: 0,
     };
+    // punto de control: se reaparece allí y se conserva la llave
+    w.check = -1;
+    const ck = opts.check && w.checks[opts.check.i];
+    if (ck) {
+      w.check = opts.check.i; ck.on = true;
+      w.p.x = ck.x + (T - PW) / 2; w.p.y = ck.y + T - PH;
+      if (opts.check.key && w.keys.length) { for (const k of w.keys) k.got = true; w.hasKey = true; w.doorOpen = 60; }
+    }
     w.hist = [];
     initBoss(w);
     return w;
@@ -288,7 +297,7 @@
     let acc = p.onGround ? PHY.groundAcc : PHY.airAcc;
     if (p.lock > 0) { p.lock--; if (dir === p.wallDir) acc *= 0.15; }
     if (dir) {
-      if (Math.sign(p.vx) === -dir) acc *= PHY.turnBoost;
+      if (Math.sign(p.vx) === -dir) acc *= p.onGround ? PHY.turnBoost : PHY.airTurn;
       if (Math.abs(p.vx) <= PHY.runMax || Math.sign(p.vx) !== dir) {
         p.vx = Math.max(-PHY.runMax, Math.min(PHY.runMax, p.vx + dir * acc));
       } else {
@@ -308,6 +317,7 @@
     if (p.buffer > 0) {
       if (p.coyote > 0) {
         p.vy = -PHY.jump; p.coyote = 0; p.buffer = 0; jumped = true; p.tramp = false;
+        p.vx += p.belt * PHY.conveyor; p.belt = 0;   // el salto conserva el empuje de la cinta
         w.events.push({ e: 'jump', x: p.x + p.w / 2, y: p.y + p.h });
       } else if (p.wallCoyote > 0) {
         p.vy = -PHY.wallJumpY; p.vx = -p.wallDir * PHY.wallJumpX; p.lock = PHY.wallLock;
@@ -339,6 +349,7 @@
         if (t === CONV_L) conv = -1; else if (t === CONV_R) conv = 1;
         return false;
       });
+      p.belt = conv;
     }
 
     // ---- mover y colisionar ----
@@ -390,7 +401,11 @@
       for (const q of plats) if (rectHit(p.x, p.y + 1, p.w, p.h, q.x, q.y, q.w, q.h) && p.y + p.h <= q.y + 1) p.ride = q.pl;
       if (!wasGround) { w.events.push({ e: 'land', x: p.x + p.w / 2, y: p.y + p.h, v: p.airTime }); p.tramp = false; }
       p.airTime = 0;
-    } else p.airTime++;
+    } else {
+      p.airTime++;
+      // al caer de una cinta sin saltar también se conserva su empuje
+      if (wasGround && p.belt) { p.vx += p.belt * PHY.conveyor; p.belt = 0; }
+    }
     // pared
     p.wall = 0;
     if (!p.onGround) {
@@ -448,6 +463,12 @@
         break;
       }
     }
+    // puntos de control
+    w.checks.forEach((k, i) => {
+      if (!k.on && rectHit(p.x, p.y, p.w, p.h, k.x + 4, k.y - T, T - 8, T * 2)) {
+        k.on = true; w.check = i; w.events.push({ e: 'check', i, key: w.hasKey, x: k.x + T / 2, y: k.y + T / 2 });
+      }
+    });
     // bandera
     if (!w.def.boss || w.def.boss.kind !== 'mill') {
       for (const f of w.flags) if (rectHit(p.x, p.y, p.w, p.h, f.x + 6, f.y, T - 10, T)) {

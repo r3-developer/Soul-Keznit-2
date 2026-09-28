@@ -746,6 +746,7 @@
       this.L = LV[o.i];
       save.cur = o.i; persist();
       this.levelDeaths = 0; this.levelTime = 0; this.surrenderShown = 0;
+      this.check = null;
       this.load(true);
       SKA.play(this.L.music);
       this.voiceQ = this.L.voice ? this.L.voice.slice() : [];
@@ -758,7 +759,7 @@
     },
     load(first) {
       const gotFrag = !!save.frags[this.li];
-      this.w = SKE.create(this.L, { gotFrag });
+      this.w = SKE.create(this.L, { gotFrag, check: this.check });
       this.layers = buildLayers(this.w);
       this.cam = this.camTarget();
       if (first) { this.cam = this.camTarget(); }
@@ -811,7 +812,7 @@
         stepFx(this); return;
       }
       if (w.done) { stepFx(this); return; }
-      if (pressed.has('restart')) { this.load(false); return; }
+      if (pressed.has('restart')) { this.check = null; this.load(false); return; }
 
       const input = {
         left: isHeld('left'), right: isHeld('right'), down: isHeld('down'),
@@ -857,6 +858,7 @@
         case 'port': SKA.sfx('port'); burst(e.from.x, e.from.y, 20, COL.purple, 3, 4, 0); burst(e.to.x, e.to.y, 20, COL.purple, 3, 4, 0); flash = 0.2; flashCol = COL.purple; break;
         case 'crack': SKA.sfx('crack'); break;
         case 'break': SKA.sfx('break'); burst(e.c * T + 15, e.r * T + 15, 10, '#fff', 1.5, 5, 0.25, 40); break;
+        case 'check': this.check = { i: e.i, key: e.key }; SKA.sfx('key'); burst(e.x, e.y, 20, '#fff', 2.5, 4, 0.02, 40); flash = 0.12; flashCol = '#fff'; break;
         case 'flag': this.complete(e); break;
         case 'death': this.die(e); break;
         case 'tele': SKA.sfx('tele'); break;
@@ -921,7 +923,7 @@
     updatePause() {
       const items = [
         { label: ui('resume'), act: () => { this.paused = false; SKA.pauseAll(false); } },
-        { label: ui('restart'), act: () => { this.paused = false; SKA.pauseAll(false); this.load(false); } },
+        { label: ui('restart'), act: () => { this.paused = false; SKA.pauseAll(false); this.check = null; this.load(false); } },
         { label: ui('options'), act: () => { SKA.pauseAll(false); go(optionsScene, 'pause'); } },
         { label: ui('quit'), act: () => { this.paused = false; SKA.pauseAll(false); persist(); go(titleScene); } },
       ];
@@ -1141,6 +1143,15 @@
         ctx.restore();
         if (!got && clock % 12 === 0) burst(f.x + 15, f.y + 15, 1, '#fff', 0.7, 2, -0.02, 40);
       }
+      // puntos de control
+      w.checks.forEach((k, i) => {
+        const on = !!k.on, X = k.x - cx + T / 2, Y = k.y - cy + T;
+        if (on) glow('#fff', 14);
+        ctx.fillStyle = on ? '#fff' : 'rgba(255,255,255,.3)'; ctx.fillRect(X - 2, Y - 34, 4, 34);
+        ctx.save(); ctx.translate(X, Y - 36 + (on ? Math.sin(clock * 0.1) * 2 : 0)); ctx.rotate(Math.PI / 4);
+        if (on) ctx.fillRect(-5, -5, 10, 10); else { ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 2; ctx.strokeRect(-5, -5, 10, 10); }
+        ctx.restore(); noGlow();
+      });
       // bandera
       for (const f of w.flags) {
         if (w.def.boss && w.def.boss.kind === 'mill') continue;
