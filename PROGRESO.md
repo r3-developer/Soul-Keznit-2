@@ -5,7 +5,7 @@
 - Soul Keznit REMAKE (web/play/sk1-remake/): juego propio en canvas, sin Scratch.
   - js/engine.js (física y mecánicas), js/levels.js (mapas + historia ES/EN), js/audio.js (efectos + chiptune), js/game.js (dibujo, menús, escenas).
   - 13 niveles en 3 actos + jefe La Trituradora (persecución, molino con 3 frenos, huida con lava). Historia: llegada al abismo, el soldado que será el Carcelero, la Voz del abismo, final que enlaza con SK2.
-  - 13 fragmentos, selección de niveles, récords, opciones (volumen con barras de ratón, música original, sacudida, retro, idioma), mando y táctil.
+  - 13 fragmentos, selección de niveles, récords, opciones (volumen con barras de ratón, música original, sacudida, retro, idioma), mando y táctil. VOLVER de Recuerdos y Créditos funciona con ratón.
   - Ajuste: sierras móviles a velocidad normal (iban x30), correr más rápido, más margen de salto, reaparición rápida, jefe más suave.
   - Nivel directo: ?nivel=2-3. tools/solver.js comprueba niveles (`--frag`); probe.js prueba tramos.
 - SK2 terminado en Scratch; .sb3 en scratch/. El SK1 original se juega en /soul-keznit/ (botón arriba y pestaña).

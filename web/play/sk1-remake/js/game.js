@@ -538,11 +538,31 @@
     },
   };
 
+  // ---------- botón VOLVER con ratón (recuerdos y créditos) ----------
+  const backBtn = { box: null };
+  function backClicked() {
+    const b = backBtn.box;
+    if (!b || !mouse.click) return false;
+    const hit = mouse.x > b.x && mouse.x < b.x + b.w && mouse.y > b.y && mouse.y < b.y + b.h;
+    if (hit) mouse.click = false;
+    return hit;
+  }
+  function drawBackBtn() {
+    const label = ui('back'), size = 16, y = VH - 26;
+    ctx.font = PX(size);
+    const w = ctx.measureText(label).width;
+    const b = backBtn.box = { x: VW / 2 - w / 2 - 18, y: y - 16, w: w + 36, h: 32 };
+    const over = mouse.x > b.x && mouse.x < b.x + b.w && mouse.y > b.y && mouse.y < b.y + b.h;
+    if (over) { ctx.fillStyle = '#fff'; ctx.fillRect(b.x, b.y, b.w, b.h); }
+    else { ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1; ctx.strokeRect(b.x + 0.5, b.y + 0.5, b.w - 1, b.h - 1); }
+    text(label, VW / 2, y + 1, size, over ? '#000' : 'rgba(255,255,255,.75)');
+  }
+
   // ---------- recuerdos ----------
   const memScene = {
     enter() { this.sel = 0; },
     update() {
-      if (pressed.has('back') || pressed.has('confirm')) { go(titleScene); SKA.sfx('back'); }
+      if (pressed.has('back') || pressed.has('confirm') || backClicked()) { go(titleScene); SKA.sfx('back'); return; }
       if (pressed.has('up')) this.sel = Math.max(0, this.sel - 1);
       if (pressed.has('down')) this.sel = Math.min(12, this.sel + 1);
     },
@@ -560,14 +580,14 @@
         if (got) text(tr(ST.memories[i]), 84, y, 19, 'rgba(255,255,255,.9)', 'left', 'serif');
         else text(`${ui('memEmpty')} ${LV[i].id}`, 84, y, 17, 'rgba(255,255,255,.25)', 'left', 'serif');
       }
-      text(ui('back'), VW / 2, VH - 20, 13, 'rgba(255,255,255,.35)');
+      drawBackBtn();
     },
   };
 
   // ---------- créditos ----------
   const creditsScene = {
     enter() { this.t = 0; },
-    update() { this.t++; if (pressed.has('back') || pressed.has('confirm')) { go(titleScene); SKA.sfx('back'); } },
+    update() { this.t++; if (pressed.has('back') || pressed.has('confirm') || backClicked()) { go(titleScene); SKA.sfx('back'); } },
     draw() {
       drawBackdrop(0, this.t, null, clock);
       const lines = save.lang === 'en' ? [
@@ -583,7 +603,7 @@
       ];
       let y = 70;
       for (const [s, size, c, f] of lines) { if (s) text(s, VW / 2, y, size, c, 'center', f === 'serif' ? 'serif' : 'px'); y += size + 16; }
-      text(ui('back'), VW / 2, VH - 20, 13, 'rgba(255,255,255,.35)');
+      drawBackBtn();
     },
   };
 
