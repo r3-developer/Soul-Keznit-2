@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Páginas web · R3K1</title>
+<meta name="description" content="Páginas web de R3K1, hechas a mano y desde cero.">
+<meta property="og:title" content="Páginas web · R3K1">
+<meta property="og:description" content="Páginas web de R3K1, hechas a mano y desde cero.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="/img/sk2/emblema.svg" type="image/svg+xml">
+<link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+.cat-hero{padding:170px 0 40px;text-align:center;position:relative;isolation:isolate;overflow:hidden;
+  background:radial-gradient(ellipse at 50% -20%,rgba(229,36,59,.22),transparent 60%)}
+.cat-hero h1{font-size:clamp(64px,13vw,150px);font-weight:800;letter-spacing:-.05em;line-height:.95;margin-top:10px;padding-bottom:.12em}
+.cat-hero .lead{max-width:620px;margin:18px auto 0}
+.others{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:30px}
+.others a{padding:8px 16px;border-radius:980px;background:rgba(255,255,255,.07);color:var(--text);font-size:14px}
+.others a[aria-current]{background:var(--accent);color:#fff}
+.others a:hover{text-decoration:none;background:rgba(255,255,255,.14)}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="/">R3K<b>1</b></a>
+    <ul>
+      <li><a href="/juegos/">Juegos</a></li>
+      <li><a href="/webs/" aria-current="page">Webs</a></li>
+      <li class="hide-sm"><a href="/otros/">Otros</a></li>
+      <li><a href="/#sobre-mi">Sobre mí</a></li>
+    </ul>
+  </div>
+</header>
+
+<main>
+  <section class="cat-hero">
+    <div class="wrap">
+      <p class="eyebrow fade-up" style="--delay:.1s">Proyectos</p>
+      <h1 class="grad fade-up" style="--delay:.2s">Webs</h1>
+      <p class="lead fade-up" style="--delay:.4s">Páginas web hechas a mano, desde cero: diseño, animación y código.</p>
+      <nav class="others fade-up" style="--delay:.55s" aria-label="Categorías">
+        <a href="/juegos/">Juegos</a><a href="/webs/" aria-current="page">Páginas web</a><a href="/otros/">Otros</a>
+      </nav>
+    </div>
+  </section>
+  <section class="sec" style="padding-top:40px">
+    <div class="wrap">
+      <div class="projects" data-proyectos="webs"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© <span data-year></span> R3K1 · TheKittyBoyfriend</span>
+    <span><a href="/juegos/">Juegos</a> · <a href="/webs/">Webs</a> · <a href="/otros/">Otros</a> · <a href="/#sobre-mi">Sobre mí</a></span>
+  </div>
+</footer>
+
+<script src="/assets/proyectos.js" defer></script>
+<script src="/assets/site.js" defer></script>
+</body>
+</html>

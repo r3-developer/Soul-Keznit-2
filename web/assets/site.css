@@ -190,3 +190,23 @@ footer a:hover{color:var(--text)}
 .touch-note{position:absolute;left:0;right:0;bottom:12px;text-align:center;font-size:13px;color:rgba(255,255,255,.75);pointer-events:none;z-index:2;padding:0 16px;text-shadow:0 1px 8px #000}
 .stage.playing .touch-note{display:none}
 ::selection{background:rgba(229,36,59,.55);color:#fff}
+
+/* ---------- Proyectos ---------- */
+.projects{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+.pcard{display:flex;flex-direction:column;color:var(--text);background:#0e0e10;border:1px solid rgba(255,255,255,.06)}
+.pcard:hover{text-decoration:none}
+.pcard .pimg{position:relative;aspect-ratio:16/10;overflow:hidden;background:radial-gradient(circle at 50% 60%,rgba(229,36,59,.35),#050506 70%);display:grid;place-items:center}
+.pcard .pimg img{width:100%;height:100%;object-fit:cover;transition:transform 1s var(--ease)}
+.pcard:hover .pimg img{transform:scale(1.06)}
+.pcard .pimg .ph{font-family:var(--display);font-size:64px;color:#fff;text-shadow:0 0 40px rgba(229,36,59,.9)}
+.pcard .pimg .badge{position:absolute;top:14px;left:14px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:980px;background:rgba(0,0,0,.65);color:#ff5a6e;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.pcard .pbody{padding:22px 24px 24px;display:flex;flex-direction:column;gap:8px;flex:1}
+.pcard small{color:var(--red);font-weight:600;font-size:13px}
+.pcard h3{font-size:24px;letter-spacing:-.02em;line-height:1.15}
+.pcard p{color:var(--text-2);font-size:16px}
+.pcard .chips{justify-content:flex-start;margin-top:4px}
+.pcard .link-arrow{margin-top:auto;padding-top:8px;color:var(--accent-text);font-size:16px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-size:12px;padding:4px 10px;border-radius:980px;background:rgba(255,255,255,.08);color:var(--text-2)}
+.empty{grid-column:1/-1;display:grid;place-items:center;gap:6px;text-align:center;padding:70px 20px;border:2px dashed var(--line);border-radius:28px;color:var(--text-2)}
+.empty b{color:var(--text);font-size:22px}
